@@ -1,0 +1,10 @@
+Note :
+Assurez-vous d'avoir le bon chemin vers l'interpréteur Python (vous pouvez trouver cela avec la commande which python3).
+Remplacez /chemin/vers/votre/script1.py par le chemin absolu vers votre script.
+
+Ouvrir cron :
+crontab -e
+
+A mettre dans le cron:
+0 15 * * * /usr/bin/python3 /chemin/vers/votre/script1.py
+0 15 * * * /usr/bin/python3 /chemin/vers/votre/script2.py
