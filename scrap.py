@@ -2,6 +2,7 @@ import json
 import time
 import requests
 import os
+import interpret_result
 from datetime import date
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -12,10 +13,6 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.service import Service as ChromeService
 from datetime import datetime
 
-
-
-# URL du site que vous souhaitez scraper
-URL = "https://www.autoscout24.ch/fr/voitures/renault--clio?hpfrom=170&hpto=185&make=66&model=460&vehtyp=10"
 # Chemin vers le driver de Chrome que vous avez installé
 DRIVER_PATH = "/opt/homebrew/bin/chromedriver" 
 
@@ -26,7 +23,7 @@ def download_image(url, save_path):
         for chunk in response.iter_content(chunk_size=8192):
             file.write(chunk)
 
-def get_content_from_url():
+def get_content_from_url(URL):
     # Configuration pour Chrome afin de le lancer en mode sans tête (headless) 
     # (c'est-à-dire sans ouvrir une fenêtre de navigateur)
 
@@ -122,8 +119,16 @@ def save_to_json(data):
         json.dump(data, file, indent=4)
 
 def main():
+    # Récupérez les URLs depuis os.environ
+    urls_to_scrape = [os.environ.get(key) for key in os.environ if 'URL_' in key]
+    
+    for url in urls_to_scrape:
+        if not url:  # pour éviter les valeurs None
+            continue
+        print(f"Scraping {url} ...")
+        
     # Récupérez le contenu de la page
-    content = get_content_from_url()
+    content = get_content_from_url(url)
     # Si vous avez réussi à obtenir du contenu, extrayez les données
     if content:
         extracted_data = extract_data(content)
@@ -161,6 +166,8 @@ def main():
             save_path = os.path.join(folder_path, image_name)
             download_image(image_url, save_path)
             print(f"Téléchargé {image_name}")
+    # Run interpret_result.py
+    interpret_result.run_scraping()
 
-if __name__ == "__main__":
+def run_scraping():
     main()

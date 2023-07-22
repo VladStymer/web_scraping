@@ -29,21 +29,6 @@ def rank_vehicles(vehicles):
     
     return ranked_vehicles
 
-# def compare_cars_by_price_per_km(cars_data):
-#     # Convertir les valeurs Price et Mileage en numérique (s'ils sont stockés comme des chaînes)
-#     # et calculer le rapport prix/km pour chaque voiture
-#     for car in cars_data:
-#         car['Price'] = float(car['Price'].replace('CHF', '').replace(',', '').strip())  # Conversion du prix en float
-#         car['Mileage'] = float(car['Mileage'].replace('km', '').replace(',', '').replace('\'', '').strip())  # Conversion du kilométrage en float
-#         car['Price_per_km'] = car['Price'] / car['Mileage']
-
-#     # Trier les voitures par rapport prix/km (du plus bas au plus haut)
-#     sorted_cars = sorted(cars_data, key=lambda x: x['Price_per_km'])
-
-#     # Afficher les voitures triées par rapport prix/km
-#     for car in sorted_cars:
-#         print(f"{car['Name']} - Prix: {car['Price']} CHF - Kilométrage: {car['Mileage']} km - Prix/km: {car['Price_per_km']:.2f} CHF/km")
-
 def main():
     today = date.today()
     file_name = f"data_{today}.json"
@@ -65,7 +50,7 @@ def main():
         price = f"{v['Price']}CHF"
         mileage = f"{v['Mileage']}km"
         # print(f"{v['Dealer Name']} - Prix: {v['Price']}CHF, Kilométrage: {v['Mileage']}km")
-        print(f"{dealer_name.ljust(30)} - Prix: {price.rjust(15)}, Kilométrage: {mileage.rjust(15)}")
+        print(f"{dealer_name.ljust(20)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}")
 
-if __name__ == "__main__":
+def run_scraping():
     main()
