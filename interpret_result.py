@@ -1,9 +1,18 @@
 import json
-import time
-import requests
+import interpret_result
 import os
 from datetime import date
 
+def load_file(file_name):
+    try:
+        with open(file_name, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        print(f"Le fichier {file_name} n'a pas été trouvé.")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Erreur de décodage JSON : {e}")
+        return None
 
 def normalise(values):
     mean = sum(values) / len(values)
@@ -31,26 +40,40 @@ def rank_vehicles(vehicles):
 
 def main():
     today = date.today()
-    file_name = f"data_{today}.json"
-    # with open(file_name, 'r') as file:
-    #     cars_data = json.load(file)
-    try:
-        with open(file_name, 'r') as file:
-            cars_data = json.load(file)
-    except FileNotFoundError:
-        print(f"Le fichier {file_name} n'a pas été trouvé.")
-        return
-    except json.JSONDecodeError as e:
-        print(f"Erreur de décodage JSON : {e}")
-        return
+    counter = 1
+    while True:
+        file_name = f"data_{today}.json" if counter == 1 else f"data{counter}_{today}.json"
+        # Si le fichier n'existe pas, on arrête.
+        if not os.path.exists(file_name):
+            break
+        
+        cars_data = load_file(file_name)
+        if cars_data is None:
+            counter += 1
+            continue
 
-    ranked = rank_vehicles(cars_data)
+        ranked = rank_vehicles(cars_data)
+        if ranked: # vérifie que la liste n'est pas vide
+            first_vehicle_name = ranked[0]['Name']
+            print(f"====== {first_vehicle_name} ======")
+            for v in ranked:
+                dealer_name = v['Dealer Name'][:22]  # Limite à 27 caractères
+                price = f"{v['Price']}CHF"
+                mileage = f"{v['Mileage']}km"
+                print(f"{dealer_name.ljust(25)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}")
+        print("\n")
+        counter += 1
+
+    email_content = ""
     for v in ranked:
-        dealer_name = v['Dealer Name']
+        dealer_name = v['Dealer Name'][:27]
         price = f"{v['Price']}CHF"
         mileage = f"{v['Mileage']}km"
-        # print(f"{v['Dealer Name']} - Prix: {v['Price']}CHF, Kilométrage: {v['Mileage']}km")
-        print(f"{dealer_name.ljust(20)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}")
+        email_content += f"{dealer_name.ljust(25)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}\n"
 
-def run_scraping():
+    interpret_result.send_email("Résultats du jour", email_content, "garage.titane@gmail.com")
+
+
+def run_interpret():
     main()
+    print("Interprétation terminée.")

@@ -1,7 +1,10 @@
 import json
-import time
+import shutil
 import requests
+import re
+import json
 import os
+import time
 import interpret_result
 from datetime import date
 from selenium import webdriver
@@ -13,35 +16,46 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.service import Service as ChromeService
 from datetime import datetime
 
+
 # Chemin vers le driver de Chrome que vous avez installé
 DRIVER_PATH = "/opt/homebrew/bin/chromedriver" 
 
-def download_image(url, save_path):
-    response = requests.get(url, stream=True, timeout=10)  # timeout après 10 secondes
-    response.raise_for_status()
-    with open(save_path, 'wb') as file:
-        for chunk in response.iter_content(chunk_size=8192):
-            file.write(chunk)
+# def download_image(url, cars_data, today):
+#     print("Téléchargement des images...")
+#     # Créer un dossier pour stocker les images s'il n'existe pas déjà
+#     base_dir = "downloaded_images"
+#     if not os.path.exists(base_dir):
+#         os.mkdir(base_dir)
+    
+#     # Pour chaque voiture, téléchargez toutes ses images
+#     for car in cars_data:
+#         # Remplacer les caractères indésirables en dehors de l'f-string
+#         mileage_clean = car['Mileage'].replace(',', '').replace('\'', '')
+#         # Création du nom de dossier pour chaque voiture
+#         folder_name = f"{today}_{car['Dealer Name']}_{car['Price']}CHF_{mileage_clean}km"
+#         folder_path = os.path.join(base_dir, folder_name)
+        
+#         # Créer le dossier s'il n'existe pas
+#         if not os.path.exists(folder_path):
+#             os.mkdir(folder_path)
+
+#         # Télécharger les images dans le dossier spécifié
+#         for index, image_url in enumerate(car["Images"]):
+#             time.sleep(0.5)
+#             image_name = f"{car['Name'].replace(' ', '_')}_{index}.jpg"
+#             save_path = os.path.join(folder_path, image_name)
+#             response = requests.get(url, stream=True, timeout=10)  # timeout après 10 secondes
+#             response.raise_for_status()
+#             with open(save_path, 'wb') as file:
+#                 for chunk in response.iter_content(chunk_size=8192):
+#                     file.write(chunk)
+#             print(f"Téléchargé {image_name}")
 
 def get_content_from_url(URL):
-    # Configuration pour Chrome afin de le lancer en mode sans tête (headless) 
-    # (c'est-à-dire sans ouvrir une fenêtre de navigateur)
-
     service = ChromeService(executable_path=DRIVER_PATH)
     options = webdriver.ChromeOptions()
-
-    # options.headless = True
-    # options.add_argument("--headless")
-    
-    # Démarrage du navigateur Chrome avec les options définies
     driver = webdriver.Chrome(service=service, options=options) 
-
-        # Accédez à l'URL spécifiée
     driver.get(URL)
-        
-        # Utilisez WebDriverWait pour attendre qu'un élément spécifique soit chargé.
-        # Dans cet exemple, je suppose qu'il y a un élément avec la balise 'script' sur la page.
-        # Ici, nous attendons qu'un élément avec le nom de balise 'script' soit présent sur la page.
     try:
         element_present = EC.presence_of_element_located((By.TAG_NAME, 'script'))
         WebDriverWait(driver, 45).until(element_present)  # Attendre jusqu'à 10 secondes
@@ -54,20 +68,13 @@ def get_content_from_url(URL):
     return page_source
 
 def extract_data(content):
-
-    # Variable pour suivre le numéro de "NoName" à attribuer
     dealer_index = 1
-
-    # Utilisez BeautifulSoup pour analyser le contenu de la page
     soup = BeautifulSoup(content, 'html.parser')
     cars_data = []
-    
     # Trouver l'élément 'link' avec l'attribut 'rel' défini sur 'canonical'
     canonical_link = soup.find('link', rel='canonical')
-    
     # Si l'élément a été trouvé, extrayez la valeur de l'attribut 'href'
     canonical_url = canonical_link['href'] if canonical_link else None
-    
     # Trouver tous les scripts sur la page
     scripts = soup.find_all('script')
     for script in scripts:
@@ -107,67 +114,98 @@ def extract_data(content):
                         dealer_name = f"NoName{dealer_index}"
                         dealer_index += 1
                 car['Dealer Name'] = dealer_name
-
     return cars_data
+
+def extract_name_from_url(url):
+    match = re.search(r'(voitures|motos)/([^?]+)', url, re.IGNORECASE)
+    if match:
+        return match.group(2)
+    return None
+
+def get_name_from_data(data):
+    first_url = get_first_url(data)
+    return extract_name_from_url(first_url)
+
+
+def get_first_url(data):
+    if isinstance(data, list) and len(data) > 0:
+        if isinstance(data[0], dict) and 'URL' in data[0]:
+            return data[0]['URL']
+    return None
 
 def save_to_json(data):
     # Obtenez la date actuelle sous forme de chaîne : "YYYY-MM-DD"
     today_str = datetime.today().strftime('%Y-%m-%d')
     filename = f"data_{today_str}.json"
+    counter = 1 
 
+    while os.path.exists(filename):
+        # Si le fichier existe, essayez de le charger
+        with open(filename, 'r') as file:
+            existing_data = json.load(file)
+        if get_name_from_data(existing_data) == get_name_from_data(data):
+            # Si le "Name" est le même, ajoutez les nouvelles données à la fin et sauvegardez.
+            existing_data.extend(data)
+            with open(filename, 'w') as file:
+                json.dump(existing_data, file, indent=4)
+            return
+
+        # Si le "Name" n'est pas le même, augmentez le compteur et vérifiez le fichier suivant.
+        counter += 1
+        filename = f"data{counter}_{today_str}.json"
+
+    # Si on arrive ici, cela signifie qu'aucun fichier correspondant n'a été trouvé.
+    # Créons donc un nouveau fichier.
     with open(filename, 'w') as file:
         json.dump(data, file, indent=4)
 
-def main():
-    # Récupérez les URLs depuis os.environ
-    urls_to_scrape = [os.environ.get(key) for key in os.environ if 'URL_' in key]
-    
-    for url in urls_to_scrape:
-        if not url:  # pour éviter les valeurs None
-            continue
-        print(f"Scraping {url} ...")
+# def delete_last_month_images():
+#     today = datetime.today()
+#     # Si nous sommes le 1er du mois
+#     if today.day == 1:
+#         last_month = today.month - 1 if today.month != 1 else 12
         
-    # Récupérez le contenu de la page
-    content = get_content_from_url(url)
-    # Si vous avez réussi à obtenir du contenu, extrayez les données
-    if content:
-        extracted_data = extract_data(content)
-        save_to_json(extracted_data)
-        print("Données extraites avec succès !")
-    print("Téléchargement des images...")
-    # Créer un dossier pour stocker les images s'il n'existe pas déjà
-    base_dir = "downloaded_images"
-    if not os.path.exists(base_dir):
-        os.mkdir(base_dir)
-    
-    print("Chargement des données...")
+#         base_dir = "downloaded_images"
+        
+#         # Pour chaque dossier dans le répertoire de base
+#         for folder_name in os.listdir(base_dir):
+#             # Ici, nous supposons que votre nom de dossier suit le format "YYYY-MM-DD" quelque part dans le nom
+#             # Par exemple, "Dealer_Name_40000CHF_12000km_2022-06-10"
+#             try:
+#                 date_part = folder_name.split('_')[-1]
+#                 folder_date = datetime.strptime(date_part, "%Y-%m-%d")
+#                 if folder_date.month == last_month:
+#                     folder_path = os.path.join(base_dir, folder_name)
+#                     shutil.rmtree(folder_path)
+#                     print(f"Dossier {folder_name} supprimé.")
+#             except:
+#                 # Ici, nous ignorons les dossiers qui n'ont pas une date valide dans leur nom
+#                 pass
+
+def main(urls_to_scrape):
+    print("Lancement du scrap...")
+    for url in urls_to_scrape:
+        # time.sleep(0.5)
+        if not url:
+            continue
+        # Récupérez le contenu de la page
+        content = get_content_from_url(url)
+        # Si vous avez réussi à obtenir du contenu, extrayez les données
+        if content:
+            extracted_data = extract_data(content)
+            save_to_json(extracted_data)
     # Lire le fichier JSON nommé par la date du jour
     today = date.today()
     file_name = f"data_{today}.json"
     with open(file_name, 'r') as file:
         cars_data = json.load(file)
     
-    print("Téléchargement des images...")
-    # Pour chaque voiture, téléchargez toutes ses images
-    for car in cars_data:
-        # Remplacer les caractères indésirables en dehors de l'f-string
-        mileage_clean = car['Mileage'].replace(',', '').replace('\'', '')
-        # Création du nom de dossier pour chaque voiture
-        folder_name = f"{car['Dealer Name']}_{car['Price']}CHF_{mileage_clean}km"
-        folder_path = os.path.join(base_dir, folder_name)
-        
-        # Créer le dossier s'il n'existe pas
-        if not os.path.exists(folder_path):
-            os.mkdir(folder_path)
-        
-        # Télécharger les images dans le dossier spécifié
-        for index, image_url in enumerate(car["Images"]):
-            image_name = f"{car['Name'].replace(' ', '_')}_{index}.jpg"
-            save_path = os.path.join(folder_path, image_name)
-            download_image(image_url, save_path)
-            print(f"Téléchargé {image_name}")
+    # Télécharger les images
+    # download_image(url, cars_data, today)
+    # Supprimer les images du mois dernier
+    # delete_last_month_images()
     # Run interpret_result.py
-    interpret_result.run_scraping()
+    interpret_result.run_interpret()
 
-def run_scraping():
-    main()
+def run_scraping(urls_to_scrape):
+    main(urls_to_scrape)
