@@ -1,55 +1,21 @@
-import json
-import shutil
-import requests
+import os
 import re
 import json
-import os
-import time
+import smtp_transfer
 import interpret_result
 from datetime import date
+from bs4 import BeautifulSoup
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from bs4 import BeautifulSoup
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service as ChromeService
-from datetime import datetime
 
 
 # Chemin vers le driver de Chrome que vous avez installé
 DRIVER_PATH = "/opt/homebrew/bin/chromedriver" 
-
-# def download_image(url, cars_data, today):
-#     print("Téléchargement des images...")
-#     # Créer un dossier pour stocker les images s'il n'existe pas déjà
-#     base_dir = "downloaded_images"
-#     if not os.path.exists(base_dir):
-#         os.mkdir(base_dir)
-    
-#     # Pour chaque voiture, téléchargez toutes ses images
-#     for car in cars_data:
-#         # Remplacer les caractères indésirables en dehors de l'f-string
-#         mileage_clean = car['Mileage'].replace(',', '').replace('\'', '')
-#         # Création du nom de dossier pour chaque voiture
-#         folder_name = f"{today}_{car['Dealer Name']}_{car['Price']}CHF_{mileage_clean}km"
-#         folder_path = os.path.join(base_dir, folder_name)
-        
-#         # Créer le dossier s'il n'existe pas
-#         if not os.path.exists(folder_path):
-#             os.mkdir(folder_path)
-
-#         # Télécharger les images dans le dossier spécifié
-#         for index, image_url in enumerate(car["Images"]):
-#             time.sleep(0.5)
-#             image_name = f"{car['Name'].replace(' ', '_')}_{index}.jpg"
-#             save_path = os.path.join(folder_path, image_name)
-#             response = requests.get(url, stream=True, timeout=10)  # timeout après 10 secondes
-#             response.raise_for_status()
-#             with open(save_path, 'wb') as file:
-#                 for chunk in response.iter_content(chunk_size=8192):
-#                     file.write(chunk)
-#             print(f"Téléchargé {image_name}")
 
 def get_content_from_url(URL):
     service = ChromeService(executable_path=DRIVER_PATH)
@@ -71,6 +37,7 @@ def extract_data(content):
     dealer_index = 1
     soup = BeautifulSoup(content, 'html.parser')
     cars_data = []
+    counter = 1
     # Trouver l'élément 'link' avec l'attribut 'rel' défini sur 'canonical'
     canonical_link = soup.find('link', rel='canonical')
     # Si l'élément a été trouvé, extrayez la valeur de l'attribut 'href'
@@ -114,6 +81,9 @@ def extract_data(content):
                         dealer_name = f"NoName{dealer_index}"
                         dealer_index += 1
                 car['Dealer Name'] = dealer_name
+                name = car['Name'][:16]
+                print(f"Vehicule {name:<16} n° {counter} extracted")
+                counter += 1
     return cars_data
 
 def extract_name_from_url(url):
@@ -136,55 +106,44 @@ def get_first_url(data):
 def save_to_json(data):
     # Obtenez la date actuelle sous forme de chaîne : "YYYY-MM-DD"
     today_str = datetime.today().strftime('%Y-%m-%d')
-    filename = f"data_{today_str}.json"
+    filename = f"{today_str}_data.json"
     counter = 1 
 
     while os.path.exists(filename):
         # Si le fichier existe, essayez de le charger
         with open(filename, 'r') as file:
             existing_data = json.load(file)
+
         if get_name_from_data(existing_data) == get_name_from_data(data):
-            # Si le "Name" est le même, ajoutez les nouvelles données à la fin et sauvegardez.
-            existing_data.extend(data)
+            # Liste pour collecter les annonces uniques de 'data' qui ne sont pas déjà dans 'existing_data'
+            unique_data = []
+
+            # Pour chaque annonce dans 'data', vérifiez si son URL est déjà dans 'existing_data'
+            for new_entry in data:
+                if not any(existing_entry["URL"] == new_entry["URL"] for existing_entry in existing_data):
+                    unique_data.append(new_entry)
+
+            # Ajout des annonces uniques à 'existing_data'
+            existing_data.extend(unique_data)
+            
             with open(filename, 'w') as file:
                 json.dump(existing_data, file, indent=4)
-            return
+            return unique_data if 'unique_data' in locals() else data
 
         # Si le "Name" n'est pas le même, augmentez le compteur et vérifiez le fichier suivant.
         counter += 1
-        filename = f"data{counter}_{today_str}.json"
+        filename = f"{today_str}_data{counter}.json"
 
     # Si on arrive ici, cela signifie qu'aucun fichier correspondant n'a été trouvé.
     # Créons donc un nouveau fichier.
     with open(filename, 'w') as file:
         json.dump(data, file, indent=4)
 
-# def delete_last_month_images():
-#     today = datetime.today()
-#     # Si nous sommes le 1er du mois
-#     if today.day == 1:
-#         last_month = today.month - 1 if today.month != 1 else 12
-        
-#         base_dir = "downloaded_images"
-        
-#         # Pour chaque dossier dans le répertoire de base
-#         for folder_name in os.listdir(base_dir):
-#             # Ici, nous supposons que votre nom de dossier suit le format "YYYY-MM-DD" quelque part dans le nom
-#             # Par exemple, "Dealer_Name_40000CHF_12000km_2022-06-10"
-#             try:
-#                 date_part = folder_name.split('_')[-1]
-#                 folder_date = datetime.strptime(date_part, "%Y-%m-%d")
-#                 if folder_date.month == last_month:
-#                     folder_path = os.path.join(base_dir, folder_name)
-#                     shutil.rmtree(folder_path)
-#                     print(f"Dossier {folder_name} supprimé.")
-#             except:
-#                 # Ici, nous ignorons les dossiers qui n'ont pas une date valide dans leur nom
-#                 pass
-
 def main(urls_to_scrape):
     print("Lancement du scrap...")
+    all_new_vehicles = []
     for url in urls_to_scrape:
+        print(f"Scraping {url}...")
         # time.sleep(0.5)
         if not url:
             continue
@@ -193,19 +152,30 @@ def main(urls_to_scrape):
         # Si vous avez réussi à obtenir du contenu, extrayez les données
         if content:
             extracted_data = extract_data(content)
-            save_to_json(extracted_data)
+            new_vehicles = save_to_json(extracted_data)
+            all_new_vehicles.extend(new_vehicles)
+
+    if all_new_vehicles:
+        email_content = "Voici les nouveaux véhicules trouvés:\n\n"
+        for v in all_new_vehicles:
+            dealer_name = v['Dealer Name'][:27]
+            price = f"{v['Price']}CHF"
+            mileage = f"{v['Mileage']}km"
+            email_content += f"{dealer_name.ljust(25)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}\n"
+        
+        smtp_transfer.run_smtp_transfer("New vehicule found", email_content, "garage.titane@gmail.com")
+        print("New vehicule found, email sent")
+
     # Lire le fichier JSON nommé par la date du jour
     today = date.today()
-    file_name = f"data_{today}.json"
+    file_name = f"{today}_data.json"
     with open(file_name, 'r') as file:
         cars_data = json.load(file)
     
-    # Télécharger les images
     # download_image(url, cars_data, today)
-    # Supprimer les images du mois dernier
     # delete_last_month_images()
-    # Run interpret_result.py
     interpret_result.run_interpret()
+    print("Scrap done!")
 
 def run_scraping(urls_to_scrape):
     main(urls_to_scrape)

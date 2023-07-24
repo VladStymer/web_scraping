@@ -1,2 +1,4 @@
 downloaded_images
 data*
+.env
+*.json

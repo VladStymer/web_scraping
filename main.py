@@ -1,11 +1,15 @@
+import os
+import time
+import scrap
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium import webdriver
-import scrap
-import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 URLS = {
-    "URL_clio":     "https://www.autoscout24.ch/fr/voitures/renault--clio?hpfrom=170&hpto=185&make=66&model=460&vehtyp=10",
-    "URL_tuonoV4":  "https://www.motoscout24.ch/fr/motos/aprilia--tuono?kmto=10000&ccmfrom=1000&make=93&model=1259&typename=fact"
+    "URL_clio":     os.getenv("URL_CLIO"),
+    "URL_tuonoV4":  os.getenv("URL_TUONO_V4")
 }
 
 DRIVER_PATH = "/opt/homebrew/bin/chromedriver" 
@@ -29,9 +33,10 @@ def main():
     options = webdriver.ChromeOptions()
     driver = webdriver.Chrome(service=service, options=options) 
     for key, base_url in URLS.items():
+        print(f"Scraping {key}...")
         page_number = 1
         while True:
-            time.sleep(0.5)
+            # time.sleep(0.5)
             url = generate_url(base_url, page_number)
             if page_exists(driver, url):
                 urls_to_scrape.append(url)
@@ -40,6 +45,7 @@ def main():
                 break
     driver.quit()
     scrap.run_scraping(urls_to_scrape)
+    print("Main done!")
 
 if __name__ == "__main__":
     main()
