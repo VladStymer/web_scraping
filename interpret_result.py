@@ -44,23 +44,23 @@ def normalise(values):
     std_dev = variance ** 0.5
     return [(x - mean) / std_dev for x in values]
 
-def rank_vehicles(vehicles):
+def rank_vehicules(vehicules):
     # Convertir le prix et le kilométrage en float/int
-    for vehicle in vehicles:
+    for vehicle in vehicules:
         vehicle["Price"] = float(vehicle["Price"].replace("CHF", "").strip())
         vehicle["Mileage"] = int(vehicle["Mileage"].replace("'", "").replace("km", "").strip())
     
-    prices = [v['Price'] for v in vehicles]
-    mileages = [v['Mileage'] for v in vehicles]
+    prices = [v['Price'] for v in vehicules]
+    mileages = [v['Mileage'] for v in vehicules]
     
     norm_prices = normalise(prices)
     norm_mileages = normalise(mileages)
     
     scores = [-p - m for p, m in zip(norm_prices, norm_mileages)]
     
-    ranked_vehicles = [vehicles[i] for i in sorted(range(len(scores)), key=lambda k: scores[k], reverse=True)]
+    ranked_vehicules = [vehicules[i] for i in sorted(range(len(scores)), key=lambda k: scores[k], reverse=True)]
     
-    return ranked_vehicles
+    return ranked_vehicules
 
 def main():
     print("Interprétation des résultats...")
@@ -77,7 +77,7 @@ def main():
             counter += 1
             continue
 
-        ranked = rank_vehicles(cars_data)
+        ranked = rank_vehicules(cars_data)
         if ranked: # vérifie que la liste n'est pas vide
             first_vehicle_name = ranked[0]['Name']
             print(f"\n====== {first_vehicle_name} ======")
@@ -89,16 +89,16 @@ def main():
         print("\n")
         counter += 1
 
-    email_content = ""
-    for v in ranked:
-        dealer_name = v['Dealer Name'][:27]
-        price = f"{v['Price']}CHF"
-        mileage = f"{v['Mileage']}km"
-        email_content += f"{dealer_name.ljust(25)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}"
+    with open('vehicules_list.txt', 'w') as file:
+        for v in ranked:
+            dealer_name = v['Dealer Name'][:27]
+            price = f"{v['Price']}CHF"
+            mileage = f"{v['Mileage']}km"
+            email_content = "Voici les nouveaux véhicules trouvés:\n\n"
+            file.write(f"{dealer_name.ljust(30)} | Prix: {price.rjust(10)} | Kilométrage: {mileage.rjust(8)}\n")
 
     if should_send_email():
-        smtp_transfer.send_email("Vehicules list", email_content, "garage.titane@gmail.com")
-        print("Email sent successfully")
+        smtp_transfer.send_email("Vehicules list", email_content, "garage.titane@gmail.com", "vehicules_list.txt")
     else:
         print("Not the right time to send an email")
     print("Interpretation done!")

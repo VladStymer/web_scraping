@@ -2,3 +2,5 @@ downloaded_images
 data*
 .env
 *.json
+vehicules_list.txt
+__pycache__

@@ -6,12 +6,20 @@ from email.message import EmailMessage
 
 load_dotenv()
 
-def send_email(subject, content, to_email):
+def send_email(subject, content, to_email, attachment_path=None):
     msg = EmailMessage()
     msg.set_content(content)
     msg['Subject'] = subject
     msg['From'] = "vnicoud@yahoo.fr"
     msg['To'] = to_email
+
+    # Check for an attachment and attach if exists
+    if attachment_path:
+        with open(attachment_path, 'rb') as file:
+            file_content = file.read()
+            file_name = os.path.basename(attachment_path)
+            msg.add_attachment(file_content, maintype='application', subtype='octet-stream', filename=file_name)
+
 
     EMAIL_HOST = os.getenv('EMAIL_HOST')
     EMAIL_PORT = os.getenv('EMAIL_PORT')

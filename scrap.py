@@ -141,7 +141,7 @@ def save_to_json(data):
 
 def main(urls_to_scrape):
     print("Lancement du scrap...")
-    all_new_vehicles = []
+    all_new_vehicules = []
     for url in urls_to_scrape:
         print(f"Scraping {url}...")
         # time.sleep(0.5)
@@ -152,12 +152,12 @@ def main(urls_to_scrape):
         # Si vous avez réussi à obtenir du contenu, extrayez les données
         if content:
             extracted_data = extract_data(content)
-            new_vehicles = save_to_json(extracted_data)
-            all_new_vehicles.extend(new_vehicles)
+            new_vehicules = save_to_json(extracted_data)
+            all_new_vehicules.extend(new_vehicules)
 
-    if all_new_vehicles:
+    if all_new_vehicules:
         email_content = "Voici les nouveaux véhicules trouvés:\n\n"
-        for v in all_new_vehicles:
+        for v in all_new_vehicules:
             dealer_name = v['Dealer Name'][:27]
             price = f"{v['Price']}CHF"
             mileage = f"{v['Mileage']}km"
