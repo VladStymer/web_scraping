@@ -45,11 +45,16 @@ def normalise(values):
     return [(x - mean) / std_dev for x in values]
 
 def rank_vehicules(vehicules):
+    print("Ranking vehicules...")
+    if not vehicules:
+        print("Aucun véhicule à classer.")
+        return []
     # Convertir le prix et le kilométrage en float/int
     for vehicle in vehicules:
         vehicle["Price"] = float(vehicle["Price"].replace("CHF", "").strip())
         vehicle["Mileage"] = int(vehicle["Mileage"].replace("'", "").replace("km", "").strip())
     
+    print("Calcul des scores...")
     prices = [v['Price'] for v in vehicules]
     mileages = [v['Mileage'] for v in vehicules]
     
@@ -67,7 +72,7 @@ def main():
     today = date.today()
     counter = 1
     while True:
-        file_name = f"{today}_data.json" if counter == 1 else f"{today}_data{counter}.json"
+        file_name = f"{today}_data{counter}.json"
         # Si le fichier n'existe pas, on arrête.
         if not os.path.exists(file_name):
             break

@@ -12,31 +12,51 @@ URLS = {
     "URL_tuonoV4":  os.getenv("URL_TUONO_V4")
 }
 
-DRIVER_PATH = "/opt/homebrew/bin/chromedriver" 
-
 def generate_url(base_url, page_number=1):
+    DEBUG = os.getenv("DEBUG")
+    if(DEBUG):
+        print(f"generate_url: base_url={base_url}, page_number={page_number}")
     if page_number == 1:
         return base_url
     else:
         return f"{base_url}&page={page_number}"
 
 def page_exists(driver, url):
+    DEBUG = os.getenv("DEBUG")
+    if(DEBUG):
+        print(f"page_exists: url={url}")
     driver.get(url)
+    time.sleep(0.5)
     if "Aucun résultat" in driver.page_source:
         return False
     return True
 
 def main():
+
+
     print("Lancement du main...")
+    DRIVER_PATH = os.getenv("DRIVER_PATH")
     urls_to_scrape = []
     service = ChromeService(executable_path=DRIVER_PATH)
-    options = webdriver.ChromeOptions()
-    driver = webdriver.Chrome(service=service, options=options) 
+    # options = webdriver.ChromeOptions()
+    # driver = webdriver.Chrome(service=service, options=options)
+
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920x1080")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-gpu")
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    chrome_options.add_argument(f"user-agent={user_agent}")
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
     for key, base_url in URLS.items():
         print(f"Scraping {key}...")
         page_number = 1
         while True:
-            # time.sleep(0.5)
+            time.sleep(0.5)
             url = generate_url(base_url, page_number)
             if page_exists(driver, url):
                 urls_to_scrape.append(url)

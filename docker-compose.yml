@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  mon_script:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: web_scraping_img
+    environment:
+      - MY_ENV_VARIABLE=value
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - DRIVER_PATH=${DRIVER_PATH}
+      - MORNING_START=${MORNING_START}
+      - MORNING_END=${MORNING_END}
+      - EVENING_START=${EVENING_START}
+      - EVENING_END=${EVENING_END}
+      - URL_CLIO=${URL_CLIO}
+      - URL_TUONO_V4=${URL_TUONO_V4}
+    volumes:
+      - ./main.py:/app/main.py
+    working_dir: /app
+    command: python main.py
+    network_mode: "host"

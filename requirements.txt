@@ -1,0 +1,4 @@
+selenium==3.141.0
+python-dotenv==0.17.0
+beautifulsoup4==4.9.3
+# ... et toutes les autres dépendances que vous utilisez

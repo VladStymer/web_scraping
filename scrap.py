@@ -18,11 +18,25 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 DRIVER_PATH = "/opt/homebrew/bin/chromedriver" 
 
 def get_content_from_url(URL):
+
     service = ChromeService(executable_path=DRIVER_PATH)
-    options = webdriver.ChromeOptions()
-    driver = webdriver.Chrome(service=service, options=options) 
+    # options = webdriver.ChromeOptions()
+    # driver = webdriver.Chrome(service=service, options=options) 
+
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920x1080")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    chrome_options.add_argument("--disable-gpu")
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    chrome_options.add_argument(f"user-agent={user_agent}")
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
     driver.get(URL)
     try:
+        # Utilisez WebDriverWait pour attendre qu'un élément spécifique soit chargé.
         element_present = EC.presence_of_element_located((By.TAG_NAME, 'script'))
         WebDriverWait(driver, 45).until(element_present)  # Attendre jusqu'à 10 secondes
     except TimeoutException:
@@ -31,6 +45,8 @@ def get_content_from_url(URL):
     # Récupérez le code source de la page
     page_source = driver.page_source
     driver.quit()
+    # if (os.getenv("DEBUG")):
+    #     print(f"get_content_from_url: page_source={page_source}")
     return page_source
 
 def extract_data(content):
@@ -68,12 +84,12 @@ def extract_data(content):
                     # "Vehicle Configuration": vehicle.get('vehicleConfiguration')
                 }
                 # Ajouter la voiture à la liste des voitures si elle a moins de 200'000 km
-                mileage = car.get('Mileage', 0)
-                if isinstance(mileage, str):
-                    mileage = mileage.replace(",", "").replace("'", "")  # supprimer les séparateurs de milliers
-                    mileage = int(mileage)
-                if mileage < 200000:
-                    cars_data.append(car)
+                # mileage = car.get('Mileage', 0)
+                # if isinstance(mileage, str):
+                #     mileage = mileage.replace(",", "").replace("'", "")  # supprimer les séparateurs de milliers
+                #     mileage = int(mileage)
+                # if mileage < 200000:
+                cars_data.append(car)
 
                 # Ajouter un nom de concessionnaire par défaut si aucun nom n'est disponible
                 dealer_name = car.get('Dealer Name')
@@ -87,6 +103,8 @@ def extract_data(content):
     return cars_data
 
 def extract_name_from_url(url):
+    if not url:
+        return None
     match = re.search(r'(voitures|motos)/([^?]+)', url, re.IGNORECASE)
     if match:
         return match.group(2)
@@ -106,26 +124,27 @@ def get_first_url(data):
 def save_to_json(data):
     # Obtenez la date actuelle sous forme de chaîne : "YYYY-MM-DD"
     today_str = datetime.today().strftime('%Y-%m-%d')
-    filename = f"{today_str}_data.json"
-    counter = 1 
-
+    counter = 1
+    filename = f"{today_str}_data{counter}.json"
+    
+    # Tant que le fichier existe, augmentez le compteur et vérifiez le fichier suivant.
     while os.path.exists(filename):
         # Si le fichier existe, essayez de le charger
         with open(filename, 'r') as file:
             existing_data = json.load(file)
-
         if get_name_from_data(existing_data) == get_name_from_data(data):
             # Liste pour collecter les annonces uniques de 'data' qui ne sont pas déjà dans 'existing_data'
             unique_data = []
 
             # Pour chaque annonce dans 'data', vérifiez si son URL est déjà dans 'existing_data'
             for new_entry in data:
+                print(f"\nexisting_data={existing_data}\nnew_entry={new_entry}\n")
                 if not any(existing_entry["URL"] == new_entry["URL"] for existing_entry in existing_data):
                     unique_data.append(new_entry)
 
             # Ajout des annonces uniques à 'existing_data'
             existing_data.extend(unique_data)
-            
+            # Écrivez les données dans le fichier
             with open(filename, 'w') as file:
                 json.dump(existing_data, file, indent=4)
             return unique_data if 'unique_data' in locals() else data
@@ -134,14 +153,15 @@ def save_to_json(data):
         counter += 1
         filename = f"{today_str}_data{counter}.json"
 
-    # Si on arrive ici, cela signifie qu'aucun fichier correspondant n'a été trouvé.
-    # Créons donc un nouveau fichier.
+        # Si on arrive ici, cela signifie qu'aucun fichier correspondant n'a été trouvé.
+        # Créons donc un nouveau fichier.
     with open(filename, 'w') as file:
         json.dump(data, file, indent=4)
 
 def main(urls_to_scrape):
     print("Lancement du scrap...")
     all_new_vehicules = []
+    # Pour chaque URL à scraper
     for url in urls_to_scrape:
         print(f"Scraping {url}...")
         # time.sleep(0.5)
@@ -153,8 +173,9 @@ def main(urls_to_scrape):
         if content:
             extracted_data = extract_data(content)
             new_vehicules = save_to_json(extracted_data)
-            all_new_vehicules.extend(new_vehicules)
-
+            if new_vehicules:
+                all_new_vehicules.extend(new_vehicules)
+    # Si de nouveaux véhicules ont été trouvés, envoyez un e-mail
     if all_new_vehicules:
         email_content = "Voici les nouveaux véhicules trouvés:\n\n"
         for v in all_new_vehicules:
@@ -167,11 +188,10 @@ def main(urls_to_scrape):
         print("New vehicule found, email sent")
 
     # Lire le fichier JSON nommé par la date du jour
-    today = date.today()
-    file_name = f"{today}_data.json"
-    with open(file_name, 'r') as file:
-        cars_data = json.load(file)
-    
+    # today = date.today()
+    # file_name = f"{today}_data1.json"
+    # with open(file_name, 'r') as file:
+    #     cars_data = json.load(file)
     # download_image(url, cars_data, today)
     # delete_last_month_images()
     interpret_result.run_interpret()
