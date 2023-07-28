@@ -15,3 +15,6 @@
 # La commande -v $(pwd):/app monte votre répertoire actuel dans le répertoire /app du conteneur, 
 # et -w /app définit le répertoire de travail du conteneur sur /app.
     # docker run -v $(pwd):/app -w /app python python script.py 
+
+# 
+    # docker run -it --entrypoint /bin/bash nom_de_votre_image
