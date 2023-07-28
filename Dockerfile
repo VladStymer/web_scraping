@@ -26,6 +26,8 @@ COPY . /app
 #     && rm -rf /usr/bin/chromedriver-linux64 \
 #     && rm chromedriver-linux64.zip \
 #     && chmod +x /usr/bin/chromedriver
+COPY chromedriver chromedriver
+
 RUN mv chromedriver /usr/bin/chromedriver \
     && chmod +x /usr/bin/chromedriver
 
