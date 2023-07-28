@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get update \
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
-    
+
 # Copiez votre code et les dépendances dans le conteneur
 WORKDIR /app
 COPY . /app
@@ -34,6 +34,8 @@ RUN mv ./chromedriver /usr/bin/chromedriver \
 ENV DISPLAY=:99
 
 # Installez les dépendances Python
+RUN pip install --default-timeout=1000 --upgrade pip
+
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Configurations pour le cron
