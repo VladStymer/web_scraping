@@ -137,17 +137,25 @@ def save_to_json(data):
             
             # Ajouter les nouvelles données filtrées à existing_data
             combined_data = existing_data + new_data_to_add
-            with open(filename, 'w') as file:
-                json.dump(combined_data, file, indent=4)
+            try:
+                with open(filename, 'w') as file:
+                    json.dump(data, file, indent=4)
+            except Exception as e:
+                print(f"Error while writing to file: {e}")
             return
+        
+        
 
         # Si le "Name" n'est pas le même, augmentez le compteur et vérifiez le fichier suivant.
         counter += 1
         filename = f"{today_str}_data{counter}.json"
     # Si on arrive ici, cela signifie qu'aucun fichier correspondant n'a été trouvé.
     # Créons donc un nouveau fichier.
-    with open(filename, 'w') as file:
-        json.dump(data, file, indent=4)
+    try:
+        with open(filename, 'w') as file:
+            json.dump(data, file, indent=4)
+    except Exception as e:
+        print(f"Error while writing to file: {e}")
 
 def main(urls_to_scrape):
     print(WARNING_COLOR + "Lancement du scrap..." + RESET_COLOR)
