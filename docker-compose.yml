@@ -2,8 +2,9 @@ version: '3'
 
 services:
   mon_script:
+    container_name: web_scraping
     build:
-      context: .
+      context: ./requirements.txt
       dockerfile: Dockerfile
     image: web_scraping_img
     environment:
@@ -22,5 +23,5 @@ services:
     volumes:
       - ./main.py:/app/main.py
     working_dir: /app
-    command: python main.py
+    command: python3 main.py
     network_mode: "host"
