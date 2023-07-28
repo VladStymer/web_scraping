@@ -29,6 +29,8 @@ COPY . /app
 
 RUN mv chromedriver /usr/bin/chromedriver \
     && chmod +x /usr/bin/chromedriver
+RUN mv google-chrome-stable_current_amd64.deb /usr/bin/google-chrome-stable_current_amd64.deb \
+    && chmod +x /usr/bin/google-chrome-stable_current_amd64.deb
 
 
 # Set display port as an environment variable
