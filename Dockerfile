@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
 # Copiez votre code et les dépendances dans le conteneur
 WORKDIR /app
 COPY . /app
+COPY /usr/bin/chromedriver /app/chromedriver
 
 # RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
 #     && unzip chromedriver-linux64.zip -d /usr/bin \
