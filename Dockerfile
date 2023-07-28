@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
 
 # Détecter la version de Chrome et télécharger le pilote correspondant
 RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/115.0.5790.102/linux64/chromedriver-linux64.zip \
-    && unzip chromedriver_linux64.zip -d /usr/bin \
+    && unzip chromedriver-linux64.zip -d /usr/bin \
+    && rm chromedriver-linux64.zip \
     && chmod +x /usr/bin/chromedriver
 
 # Set display port as an environment variable
