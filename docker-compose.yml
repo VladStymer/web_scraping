@@ -4,7 +4,7 @@ services:
   mon_script:
     container_name: web_scraping
     build:
-      context: ./requirements.txt
+      context: .
       dockerfile: Dockerfile
     image: web_scraping_img
     environment:
