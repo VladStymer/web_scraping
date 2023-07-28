@@ -6,8 +6,11 @@ from datetime import time
 from datetime import datetime
 from dotenv import load_dotenv
 
-
 load_dotenv()
+WARNING_COLOR = os.getenv("WARNING_COLOR").encode().decode('unicode_escape')
+OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
+ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
+RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
 def time_from_env(key):
     """Convertit une chaîne HH:MM depuis .env en un objet time."""
@@ -32,10 +35,10 @@ def load_file(file_name):
         with open(file_name, 'r') as file:
             return json.load(file)
     except FileNotFoundError:
-        print(f"Le fichier {file_name} n'a pas été trouvé.")
+        print(ERROR_COLOR + f"Le fichier {file_name} n'a pas été trouvé." + RESET_COLOR)
         return None
     except json.JSONDecodeError as e:
-        print(f"Erreur de décodage JSON : {e}")
+        print(ERROR_COLOR + f"Erreur de décodage JSON : {e}" + RESET_COLOR)
         return None
 
 def normalise(values):
@@ -45,16 +48,16 @@ def normalise(values):
     return [(x - mean) / std_dev for x in values]
 
 def rank_vehicules(vehicules):
-    print("Ranking vehicules...")
+    print(WARNING_COLOR + "Ranking vehicules..." + RESET_COLOR)
     if not vehicules:
-        print("Aucun véhicule à classer.")
+        print(ERROR_COLOR + "Aucun véhicule à classer." + RESET_COLOR)
         return []
     # Convertir le prix et le kilométrage en float/int
     for vehicle in vehicules:
         vehicle["Price"] = float(vehicle["Price"].replace("CHF", "").strip())
         vehicle["Mileage"] = int(vehicle["Mileage"].replace("'", "").replace("km", "").strip())
     
-    print("Calcul des scores...")
+    print(WARNING_COLOR + "Calcul des scores..." + RESET_COLOR)
     prices = [v['Price'] for v in vehicules]
     mileages = [v['Mileage'] for v in vehicules]
     
@@ -68,7 +71,7 @@ def rank_vehicules(vehicules):
     return ranked_vehicules
 
 def main():
-    print("Interprétation des résultats...")
+    print(WARNING_COLOR + "Interprétation des résultats..." + RESET_COLOR)
     today = date.today()
     counter = 1
     while True:
@@ -85,13 +88,13 @@ def main():
         ranked = rank_vehicules(cars_data)
         if ranked: # vérifie que la liste n'est pas vide
             first_vehicle_name = ranked[0]['Name']
-            print(f"\n====== {first_vehicle_name} ======")
+            # print(f"\n====== {first_vehicle_name} ======")
             for v in ranked:
                 dealer_name = v['Dealer Name'][:22]  # Limite à 27 caractères
                 price = f"{v['Price']}CHF"
                 mileage = f"{v['Mileage']}km"
-                print(f"{dealer_name.ljust(25)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}")
-        print("\n")
+                # print(f"{dealer_name.ljust(25)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}")
+        # print("\n")
         counter += 1
 
     with open('vehicules_list.txt', 'w') as file:
@@ -99,14 +102,14 @@ def main():
             dealer_name = v['Dealer Name'][:27]
             price = f"{v['Price']}CHF"
             mileage = f"{v['Mileage']}km"
-            email_content = "Voici les nouveaux véhicules trouvés:\n\n"
+            email_content = "Vehicules interessants:\n\n"
             file.write(f"{dealer_name.ljust(30)} | Prix: {price.rjust(10)} | Kilométrage: {mileage.rjust(8)}\n")
 
     if should_send_email():
-        smtp_transfer.send_email("Vehicules list", email_content, "garage.titane@gmail.com", "vehicules_list.txt")
+        smtp_transfer.run_smtp_transfer("Vehicules list", email_content, "garage.titane@gmail.com", "vehicules_list.txt")
     else:
         print("Not the right time to send an email")
-    print("Interpretation done!")
+    print(OK_COLOR + "Interpretation done!" + RESET_COLOR)
 
 def run_interpret():
     main()

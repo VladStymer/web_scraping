@@ -5,7 +5,12 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium import webdriver
 from dotenv import load_dotenv
 
+debug_mode = os.getenv("DEBUG", "False").lower() == "true"
 load_dotenv()
+WARNING_COLOR = os.getenv("WARNING_COLOR").encode().decode('unicode_escape')
+OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
+ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
+RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
 URLS = {
     "URL_clio":     os.getenv("URL_CLIO"),
@@ -13,8 +18,7 @@ URLS = {
 }
 
 def generate_url(base_url, page_number=1):
-    DEBUG = os.getenv("DEBUG")
-    if(DEBUG):
+    if debug_mode:
         print(f"generate_url: base_url={base_url}, page_number={page_number}")
     if page_number == 1:
         return base_url
@@ -22,19 +26,17 @@ def generate_url(base_url, page_number=1):
         return f"{base_url}&page={page_number}"
 
 def page_exists(driver, url):
-    DEBUG = os.getenv("DEBUG")
-    if(DEBUG):
+    if debug_mode:
         print(f"page_exists: url={url}")
     driver.get(url)
-    time.sleep(0.5)
+    # time.sleep(0.5)
     if "Aucun résultat" in driver.page_source:
         return False
     return True
 
 def main():
+    print(WARNING_COLOR + "Lancement du main..." + RESET_COLOR)    
 
-
-    print("Lancement du main...")
     DRIVER_PATH = os.getenv("DRIVER_PATH")
     urls_to_scrape = []
     service = ChromeService(executable_path=DRIVER_PATH)
@@ -53,10 +55,10 @@ def main():
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
     for key, base_url in URLS.items():
-        print(f"Scraping {key}...")
+        print(WARNING_COLOR + f"Scraping {key}..." + RESET_COLOR)
         page_number = 1
         while True:
-            time.sleep(0.5)
+            # time.sleep(0.5)
             url = generate_url(base_url, page_number)
             if page_exists(driver, url):
                 urls_to_scrape.append(url)
@@ -65,7 +67,7 @@ def main():
                 break
     driver.quit()
     scrap.run_scraping(urls_to_scrape)
-    print("Main done!")
+    print(OK_COLOR + "Main done!" + RESET_COLOR)
 
 if __name__ == "__main__":
     main()

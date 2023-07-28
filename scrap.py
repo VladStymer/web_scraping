@@ -7,7 +7,9 @@ from datetime import date
 from bs4 import BeautifulSoup
 from datetime import datetime
 from selenium import webdriver
+from dotenv import load_dotenv
 from selenium.webdriver.common.by import By
+from is_data_new import is_data_new_main
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
@@ -15,13 +17,18 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 
 
 # Chemin vers le driver de Chrome que vous avez installé
-DRIVER_PATH = "/opt/homebrew/bin/chromedriver" 
+DRIVER_PATH = "/opt/homebrew/bin/chromedriver"
+debug_mode = os.getenv("DEBUG", "False").lower() == "true"
+load_dotenv()
+WARNING_COLOR = os.getenv("WARNING_COLOR").encode().decode('unicode_escape')
+OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
+ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
+RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
+
 
 def get_content_from_url(URL):
 
     service = ChromeService(executable_path=DRIVER_PATH)
-    # options = webdriver.ChromeOptions()
-    # driver = webdriver.Chrome(service=service, options=options) 
 
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("--headless")
@@ -40,12 +47,12 @@ def get_content_from_url(URL):
         element_present = EC.presence_of_element_located((By.TAG_NAME, 'script'))
         WebDriverWait(driver, 45).until(element_present)  # Attendre jusqu'à 10 secondes
     except TimeoutException:
-        print("Timed out waiting for page to load")
+        print(ERROR_COLOR + "Timed out waiting for page to load" + RESET_COLOR)
     
     # Récupérez le code source de la page
     page_source = driver.page_source
     driver.quit()
-    # if (os.getenv("DEBUG")):
+    # if debug_mode:
     #     print(f"get_content_from_url: page_source={page_source}")
     return page_source
 
@@ -83,14 +90,7 @@ def extract_data(content):
                     "Fuel Type": vehicle.get('fuelType'),
                     # "Vehicle Configuration": vehicle.get('vehicleConfiguration')
                 }
-                # Ajouter la voiture à la liste des voitures si elle a moins de 200'000 km
-                # mileage = car.get('Mileage', 0)
-                # if isinstance(mileage, str):
-                #     mileage = mileage.replace(",", "").replace("'", "")  # supprimer les séparateurs de milliers
-                #     mileage = int(mileage)
-                # if mileage < 200000:
                 cars_data.append(car)
-
                 # Ajouter un nom de concessionnaire par défaut si aucun nom n'est disponible
                 dealer_name = car.get('Dealer Name')
                 if not dealer_name:
@@ -98,7 +98,8 @@ def extract_data(content):
                         dealer_index += 1
                 car['Dealer Name'] = dealer_name
                 name = car['Name'][:16]
-                print(f"Vehicule {name:<16} n° {counter} extracted")
+                if debug_mode:
+                    print(f"Vehicule {name:<16} n° {counter} extracted")
                 counter += 1
     return cars_data
 
@@ -122,48 +123,38 @@ def get_first_url(data):
     return None
 
 def save_to_json(data):
-    # Obtenez la date actuelle sous forme de chaîne : "YYYY-MM-DD"
     today_str = datetime.today().strftime('%Y-%m-%d')
     counter = 1
     filename = f"{today_str}_data{counter}.json"
-    
     # Tant que le fichier existe, augmentez le compteur et vérifiez le fichier suivant.
     while os.path.exists(filename):
-        # Si le fichier existe, essayez de le charger
         with open(filename, 'r') as file:
             existing_data = json.load(file)
+
         if get_name_from_data(existing_data) == get_name_from_data(data):
-            # Liste pour collecter les annonces uniques de 'data' qui ne sont pas déjà dans 'existing_data'
-            unique_data = []
-
-            # Pour chaque annonce dans 'data', vérifiez si son URL est déjà dans 'existing_data'
-            for new_entry in data:
-                print(f"\nexisting_data={existing_data}\nnew_entry={new_entry}\n")
-                if not any(existing_entry["URL"] == new_entry["URL"] for existing_entry in existing_data):
-                    unique_data.append(new_entry)
-
-            # Ajout des annonces uniques à 'existing_data'
-            existing_data.extend(unique_data)
-            # Écrivez les données dans le fichier
+            # Filtrer les éléments de `data` qui ne sont pas déjà dans `existing_data`
+            new_data_to_add = [item for item in data if item not in existing_data]
+            
+            # Ajouter les nouvelles données filtrées à existing_data
+            combined_data = existing_data + new_data_to_add
             with open(filename, 'w') as file:
-                json.dump(existing_data, file, indent=4)
-            return unique_data if 'unique_data' in locals() else data
+                json.dump(combined_data, file, indent=4)
+            return
 
         # Si le "Name" n'est pas le même, augmentez le compteur et vérifiez le fichier suivant.
         counter += 1
         filename = f"{today_str}_data{counter}.json"
-
-        # Si on arrive ici, cela signifie qu'aucun fichier correspondant n'a été trouvé.
-        # Créons donc un nouveau fichier.
+    # Si on arrive ici, cela signifie qu'aucun fichier correspondant n'a été trouvé.
+    # Créons donc un nouveau fichier.
     with open(filename, 'w') as file:
         json.dump(data, file, indent=4)
 
 def main(urls_to_scrape):
-    print("Lancement du scrap...")
+    print(WARNING_COLOR + "Lancement du scrap..." + RESET_COLOR)
     all_new_vehicules = []
     # Pour chaque URL à scraper
     for url in urls_to_scrape:
-        print(f"Scraping {url}...")
+        print(WARNING_COLOR + "Scraping "  + RESET_COLOR + f"{url}...")
         # time.sleep(0.5)
         if not url:
             continue
@@ -172,21 +163,25 @@ def main(urls_to_scrape):
         # Si vous avez réussi à obtenir du contenu, extrayez les données
         if content:
             extracted_data = extract_data(content)
-            new_vehicules = save_to_json(extracted_data)
-            if new_vehicules:
-                all_new_vehicules.extend(new_vehicules)
+            new_vehicules = is_data_new_main(extracted_data)
+            all_new_vehicules.extend(new_vehicules)
+            save_to_json(extracted_data)
     # Si de nouveaux véhicules ont été trouvés, envoyez un e-mail
     if all_new_vehicules:
-        email_content = "Voici les nouveaux véhicules trouvés:\n\n"
-        for v in all_new_vehicules:
-            dealer_name = v['Dealer Name'][:27]
-            price = f"{v['Price']}CHF"
-            mileage = f"{v['Mileage']}km"
-            email_content += f"{dealer_name.ljust(25)}  |  Prix: {price.rjust(12)}  |  Kilométrage: {mileage.rjust(10)}\n"
+        print("New vehicule found")
+        with open('new_vehicules_list.txt', 'w') as file:
+            email_content = "Voici les nouveaux véhicules trouvés:\n\n"
+            for v in all_new_vehicules:
+                vehicle_name = v['Name'][:16]
+                dealer_name = v['Dealer Name'][:27]
+                price = f"{v['Price']}CHF"
+                mileage = f"{v['Mileage']}km"
+                file.write(f"{vehicle_name} | {dealer_name.ljust(30)} | Prix: {price.rjust(10)} | Kilométrage: {mileage.rjust(8)}\n")
         
-        smtp_transfer.run_smtp_transfer("New vehicule found", email_content, "garage.titane@gmail.com")
-        print("New vehicule found, email sent")
-
+        smtp_transfer.run_smtp_transfer("New vehicule found", email_content, "garage.titane@gmail.com", "new_vehicules_list.txt")
+    else:
+        print("No new vehicule found")
+            
     # Lire le fichier JSON nommé par la date du jour
     # today = date.today()
     # file_name = f"{today}_data1.json"
@@ -195,7 +190,7 @@ def main(urls_to_scrape):
     # download_image(url, cars_data, today)
     # delete_last_month_images()
     interpret_result.run_interpret()
-    print("Scrap done!")
+    print(OK_COLOR + "Scrap done!" + RESET_COLOR)
 
 def run_scraping(urls_to_scrape):
     main(urls_to_scrape)

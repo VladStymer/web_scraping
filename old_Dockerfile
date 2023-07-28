@@ -1,0 +1,101 @@
+# Utilisez une image de base Python
+FROM python:3.8
+
+# Mettez à jour et installez les dépendances nécessaires pour Chrome et ChromeDriver
+RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    libglib2.0-0 \
+    libnss3 \
+    libgconf-2-4 \
+    libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Adding trusting keys to apt for repositories
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+
+# Adding Google Chrome to the repositories
+RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+
+# Updating apt to see and install Google Chrome
+RUN apt-get -y update
+
+# Magic happens
+RUN apt-get install -y google-chrome-stable
+
+
+
+
+
+# Installing Unzip
+RUN apt-get install -yqq unzip
+
+# Download the Chrome Driver
+RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
+
+# Unzip the Chrome Driver into /usr/local/bin directory
+RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
+
+# Set display port as an environment variable
+ENV DISPLAY=:99
+
+
+chrome_version=115.0.5790.102
+
+
+COPY . /app
+WORKDIR /app
+
+RUN pip install --upgrade pip
+
+RUN pip install -r requirements.txt
+
+
+
+
+# Détecter la version de Chrome
+# RUN CHROME_VERSION=$(google-chrome --product-version | awk -F'.' '{print $1"."$2"."$3}') && \
+#     wget https://chromedriver.storage.googleapis.com/$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")/chromedriver_linux64.zip && \
+#     unzip chromedriver_linux64.zip -d /usr/bin && \
+#     chmod +x /usr/bin/chromedriver
+
+# Copiez votre script et les dépendances Python dans le conteneur
+COPY ./requirements.txt /app/requirements.txt
+COPY requirements.txt .
+COPY ./main.py /app/main.py
+COPY ./scrap.py /app/scrap.py
+COPY ./is_data_new.py /app/is_data_new.py
+COPY ./interpret_result.py /app/interpret_result.py
+COPY ./smtp_transfer.py /app/smtp_transfer.py
+COPY ./.env /app/.env
+COPY mycron /etc/cron.d/mycron
+
+# Installez les bibliothèques Python nécessaires
+# Installez les dépendances Python
+RUN chmod 0644 /etc/cron.d/mycron
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN apt-get install -y libglib2.0-0
+RUN apt-get update && apt-get install -y wget unzip
+RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
+RUN unzip chromedriver_linux64.zip
+RUN apt-get update && apt-get install -y cron
+
+
+
+
+
+
+# Exécutez le script
+CMD ["python", "./app.py"]
+CMD ["cron", "-f"]
+CMD ["python", "./main.py"]
+
+
+
+
+
+
+
+
+

@@ -5,8 +5,12 @@ from email.message import EmailMessage
 
 
 load_dotenv()
+WARNING_COLOR = os.getenv("WARNING_COLOR").encode().decode('unicode_escape')
+OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
+ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
+RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
-def send_email(subject, content, to_email, attachment_path=None):
+def send_email(subject, content, to_email, attachment_path):
     msg = EmailMessage()
     msg.set_content(content)
     msg['Subject'] = subject
@@ -31,12 +35,12 @@ def send_email(subject, content, to_email, attachment_path=None):
         with smtplib.SMTP_SSL(EMAIL_HOST, EMAIL_PORT) as server:
             server.login(EMAIL_USER, EMAIL_PASSWORD)
             server.send_message(msg)
-        print("E-mail sent successfully!")
+        print(OK_COLOR + "E-mail sent successfully!" + RESET_COLOR)
     except Exception as e:
-        print(f"Failed to send email due to: {e}")
+        print(ERROR_COLOR + f"Failed to send email due to: {e}" + RESET_COLOR)
 
-def main(subject, content, to_email):
-    send_email(subject, content, to_email)
+def main(subject, content, to_email, attachment_path):
+    send_email(subject, content, to_email, attachment_path)
 
-def run_smtp_transfer(subject, content, to_email):
-    main(subject, content, to_email)
+def run_smtp_transfer(subject, content, to_email, attachment_path):
+    main(subject, content, to_email, attachment_path)
