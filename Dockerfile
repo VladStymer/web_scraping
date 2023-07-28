@@ -15,7 +15,10 @@ RUN apt-get update && apt-get install -y \
     && apt-get update \
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
-
+    
+# Copiez votre code et les dépendances dans le conteneur
+WORKDIR /app
+COPY . /app
 
 # RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
 #     && unzip chromedriver-linux64.zip -d /usr/bin \
@@ -29,10 +32,6 @@ RUN mv ./chromedriver /usr/bin/chromedriver \
 
 # Set display port as an environment variable
 ENV DISPLAY=:99
-
-# Copiez votre code et les dépendances dans le conteneur
-WORKDIR /app
-COPY . /app
 
 # Installez les dépendances Python
 RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
