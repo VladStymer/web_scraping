@@ -184,7 +184,7 @@ def main(urls_to_scrape):
                 dealer_name = v['Dealer Name'][:27]
                 price = f"{v['Price']}CHF"
                 mileage = f"{v['Mileage']}km"
-                file.write(f"{vehicle_name} | {dealer_name.ljust(30)} | Prix: {price.rjust(10)} | Kilométrage: {mileage.rjust(8)}\n")
+                file.write(f"{vehicle_name} | {dealer_name.ljust(30)} | Prix: {price.rjust(10)} | Kilométrage: {mileage.rjust(8)}\n\n")
         
         smtp_transfer.run_smtp_transfer("New vehicule found", email_content, "garage.titane@gmail.com", "new_vehicules_list.txt")
     else:
