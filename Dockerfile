@@ -17,8 +17,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Détecter la version de Chrome et télécharger le pilote correspondant
-RUN CHROME_MAJOR_VERSION=$(google-chrome --product-version | cut -d. -f1) \
-    && wget https://chromedriver.storage.googleapis.com/$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR_VERSION")/chromedriver_linux64.zip \
+RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/115.0.5790.102/linux64/chromedriver-linux64.zip \
     && unzip chromedriver_linux64.zip -d /usr/bin \
     && chmod +x /usr/bin/chromedriver
 
