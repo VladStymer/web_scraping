@@ -35,9 +35,8 @@ RUN mv chromedriver /usr/bin/chromedriver \
 ENV DISPLAY=:99
 
 # Installez les dépendances Python
-RUN pip install --default-timeout=1000 --upgrade pip
-
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --upgrade pip
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Configurations pour le cron
 COPY mycron /etc/cron.d/mycron
