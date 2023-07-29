@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
 # Copiez votre code et les dépendances dans le conteneur
 WORKDIR /app
 COPY . /app
+COPY google-chrome-stable_current_amd64.deb /tmp/
 
 # RUN wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
 #     && unzip chromedriver-linux64.zip -d /usr/bin \
@@ -29,8 +30,12 @@ COPY . /app
 
 RUN mv chromedriver /usr/bin/chromedriver \
     && chmod +x /usr/bin/chromedriver
-RUN mv google-chrome-stable_current_amd64.deb /usr/bin/google-chrome-stable_current_amd64.deb \
-    && chmod +x /usr/bin/google-chrome-stable_current_amd64.deb
+
+# Installer Google Chrome
+RUN apt-get update && \
+    dpkg -i /tmp/google-chrome-stable_current_amd64.deb || true && \
+    apt-get install -f -y && \
+    rm /tmp/google-chrome-stable_current_amd64.deb
 
 
 # Set display port as an environment variable
