@@ -92,7 +92,7 @@ def extract_data(content):
                 # Ajouter un nom de concessionnaire par défaut si aucun nom n'est disponible
                 dealer_name = car.get('Dealer Name')
                 if not dealer_name:
-                        dealer_name = f"NoName{dealer_index}"
+                        dealer_name = f"Private_dealer_{dealer_index}"
                         dealer_index += 1
                 car['Dealer Name'] = dealer_name
                 name = car['Name'][:16]
