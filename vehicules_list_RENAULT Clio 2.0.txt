@@ -1,0 +1,90 @@
+RENAULT Clio 2.0               | Private_seller_1              
+Prix:  9900.0CHF | Kilométrage:  94000km
+
+RENAULT Clio 2.0               | Auto Bürki AG                 
+Prix:  6900.0CHF | Kilométrage: 153000km
+
+RENAULT Clio 2.0               | Ticino Cars                   
+Prix:  8600.0CHF | Kilométrage: 125942km
+
+RENAULT Clio 2.0               | Private_seller_3              
+Prix: 12900.0CHF | Kilométrage:  59927km
+
+RENAULT Clio 2.0               | AB Electronics Sàrl           
+Prix:  8200.0CHF | Kilométrage: 154000km
+
+RENAULT Clio 2.0               | CG automobiles SA             
+Prix:  7900.0CHF | Kilométrage: 171526km
+
+RENAULT Clio 2.0               | Private_seller_2              
+Prix: 10000.0CHF | Kilométrage: 141000km
+
+RENAULT Clio 2.0               | Garage Haltinner AG           
+Prix:  9990.0CHF | Kilométrage: 157000km
+
+RENAULT Clio 2.0               | AUTOKUG                       
+Prix: 16900.0CHF | Kilométrage:  36733km
+
+RENAULT Clio 2.0               | Garage Greub AG Riedtwil      
+Prix:  8600.0CHF | Kilométrage: 226800km
+
+RENAULT Clio 2.0               | Private_seller_1              
+Prix:  9900.0CHF | Kilométrage:  94000km
+
+RENAULT Clio 2.0               | Auto Bürki AG                 
+Prix:  6900.0CHF | Kilométrage: 153000km
+
+RENAULT Clio 2.0               | Ticino Cars                   
+Prix:  8600.0CHF | Kilométrage: 125942km
+
+RENAULT Clio 2.0               | Private_seller_3              
+Prix: 12900.0CHF | Kilométrage:  59927km
+
+RENAULT Clio 2.0               | AB Electronics Sàrl           
+Prix:  8200.0CHF | Kilométrage: 154000km
+
+RENAULT Clio 2.0               | CG automobiles SA             
+Prix:  7900.0CHF | Kilométrage: 171526km
+
+RENAULT Clio 2.0               | Private_seller_2              
+Prix: 10000.0CHF | Kilométrage: 141000km
+
+RENAULT Clio 2.0               | Garage Haltinner AG           
+Prix:  9990.0CHF | Kilométrage: 157000km
+
+RENAULT Clio 2.0               | AUTOKUG                       
+Prix: 16900.0CHF | Kilométrage:  36733km
+
+RENAULT Clio 2.0               | Garage Greub AG Riedtwil      
+Prix:  8600.0CHF | Kilométrage: 226800km
+
+RENAULT Clio 2.0               | Private_seller_1              
+Prix:  9900.0CHF | Kilométrage:  94000km
+
+RENAULT Clio 2.0               | Auto Bürki AG                 
+Prix:  6900.0CHF | Kilométrage: 153000km
+
+RENAULT Clio 2.0               | Ticino Cars                   
+Prix:  8600.0CHF | Kilométrage: 125942km
+
+RENAULT Clio 2.0               | Private_seller_3              
+Prix: 12900.0CHF | Kilométrage:  59927km
+
+RENAULT Clio 2.0               | AB Electronics Sàrl           
+Prix:  8200.0CHF | Kilométrage: 154000km
+
+RENAULT Clio 2.0               | CG automobiles SA             
+Prix:  7900.0CHF | Kilométrage: 171526km
+
+RENAULT Clio 2.0               | Private_seller_2              
+Prix: 10000.0CHF | Kilométrage: 141000km
+
+RENAULT Clio 2.0               | Garage Haltinner AG           
+Prix:  9990.0CHF | Kilométrage: 157000km
+
+RENAULT Clio 2.0               | AUTOKUG                       
+Prix: 16900.0CHF | Kilométrage:  36733km
+
+RENAULT Clio 2.0               | Garage Greub AG Riedtwil      
+Prix:  8600.0CHF | Kilométrage: 226800km
+
