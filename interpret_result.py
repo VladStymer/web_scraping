@@ -92,6 +92,7 @@ def group_vehicles_by_name(vehicles_list):
 
 def main(extracted_data):
     print(WARNING_COLOR + "Interprétation des résultats..." + RESET_COLOR)
+    print(f"extracted_data:\n{extracted_data}\n")
     if MODE == 0:
         today = date.today()
         counter = 1
