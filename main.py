@@ -59,6 +59,9 @@ def collect_urls_to_scrape(driver, URLS):
     for key, base_url in URLS.items():
         print(WARNING_COLOR + f"Generate url {key}..." + RESET_COLOR)
         page_number = 1
+        if not base_url:
+            print(ERROR_COLOR + f"URL {key} not found in .env file" + RESET_COLOR)
+            continue
         source = identify_url_source(base_url)
         while True:
             url = generate_url(base_url, source, page_number)

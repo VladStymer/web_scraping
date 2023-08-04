@@ -48,70 +48,42 @@ def normalise(values):
     std_dev = variance ** 0.5
     return [(x - mean) / std_dev for x in values]
 
-def rank_vehicules(vehicules):
-    print(WARNING_COLOR + "Ranking vehicules..." + RESET_COLOR)
-    if not vehicules:
-        print(ERROR_COLOR + "Aucun véhicule à classer." + RESET_COLOR)
+def rank_vehicles(vehicles):
+    if not vehicles:
+        print("Aucun véhicule à classer.")
         return []
-    for vehicle in vehicules:
-        # Convertir le prix en float si ce n'est pas déjà un float
-        if not isinstance(vehicle["Price"], float):
+
+    # Flatten the list of vehicles
+    flat_vehicles = [v for sublist in vehicles for v in sublist]
+
+    # Extract and normalize prices and mileages
+    for vehicle in flat_vehicles:
+        # Handle 'Unknown' price
+        if vehicle["Price"] == 'Unknown':
+            vehicle["Price"] = float('inf')
+            print(f"vehicle: {vehicle['Name']}\n")
+            print(f"vehicle['Price']: {vehicle['Price']}\n\n")
+        else:
             vehicle["Price"] = float(vehicle["Price"].replace("CHF", "").strip())
-        # Convertir le kilométrage en int si ce n'est pas déjà un int
-        if not isinstance(vehicle["Mileage"], int):
-            vehicle["Mileage"] = int(vehicle["Mileage"].replace("'", "").replace("km", "").strip())
-    
-    print(WARNING_COLOR + "Calcul des scores..." + RESET_COLOR)
-    prices = [v['Price'] for v in vehicules]
-    mileages = [v['Mileage'] for v in vehicules]
-    
-    norm_prices = normalise(prices)
-    norm_mileages = normalise(mileages)
-    
-    scores = [-p - m for p, m in zip(norm_prices, norm_mileages)]
 
-    # Associer chaque score à son véhicule
-    for vehicle, score in zip(vehicules, scores):
-        vehicle["prix_km"] = score
+        # Convert mileage to int
+        vehicle["Mileage"] = int(vehicle["Mileage"].replace("'", "").replace("km", "").strip())
 
-    
-    ranked_vehicules = [vehicules[i] for i in sorted(range(len(scores)), key=lambda k: scores[k], reverse=True)]
-    
-    return ranked_vehicules
+    # Calculate scores based on normalized values
+    max_price = max(v['Price'] for v in flat_vehicles)
+    max_mileage = max(v['Mileage'] for v in flat_vehicles)
+
+    for vehicle in flat_vehicles:
+        norm_price = vehicle["Price"] / max_price if max_price else 0
+        norm_mileage = vehicle["Mileage"] / max_mileage if max_mileage else 0
+        vehicle["prix_km"] = -norm_price - norm_mileage
+
+    # Sort vehicles based on scores
+    # ranked_vehicles = sorted(flat_vehicles, key=lambda x: x["prix_km"], reverse=True)
+    # print(f"flat_vehicles: {flat_vehicles}")
+    return flat_vehicles
 
 
-
-# def group_vehicles_by_name(vehicles_list):
-#     grouped_vehicles = {}
-    
-#     for vehicle in vehicles_list:
-#         name = vehicle["Name"]
-#         if name in grouped_vehicles:
-#             grouped_vehicles[name].append(vehicle)
-#         else:
-#             grouped_vehicles[name] = [vehicle]
-            
-#     return grouped_vehicles
-
-# def group_vehicles_by_name_and_cylindree(vehicles):
-#     # vehicles = recuperer_vehicules()
-#     grouped_vehicles = {}
-
-#     for vehicle in vehicles:
-#         if 'Type' in vehicle:
-#             name_key = vehicle["Name"]
-#             model_key = vehicle["Type"]
-#         else:
-#             name_key = vehicle["marque"][:5]
-#         cylindree_key = vehicle["Cylindrée"] if vehicle["Cylindrée"] else ""
-#         key = f"{name_key}_{cylindree_key}_{model_key}"
-
-#         # Ajout du véhicule au groupe correspondant dans le dictionnaire
-#         if key not in grouped_vehicles:
-#             grouped_vehicles[key] = []
-#         grouped_vehicles[key].append(vehicle)
-#     print(f"grouped_vehicles: {grouped_vehicles}")
-#     return grouped_vehicles
 
 def group_vehicles_by_name_and_cylindree(vehicle):
     grouped_vehicles = {}
@@ -158,7 +130,7 @@ def main(extracted_data):
                 counter += 1
                 continue
 
-            ranked = rank_vehicules(cars_data)
+            ranked = rank_vehicles(cars_data)
             if ranked: # vérifie que la liste n'est pas vide
                 first_vehicle_name = ranked[0]['Name']
                 # print(f"\n====== {first_vehicle_name} ======")
@@ -186,7 +158,7 @@ def main(extracted_data):
     elif MODE == 1:
         grouped_by_name = group_vehicles_by_name_and_cylindree(extracted_data)
         for key, value in grouped_by_name.items():
-            ranked = rank_vehicules(value)
+            ranked = rank_vehicles(value)
             name = ranked[0]['Name'][:16] if ranked else "default"
             print(f"vehicules_list_{name}.txt")
             with open(f'vehicules_list_{name}.txt', 'a') as file:

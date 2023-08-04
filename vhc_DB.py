@@ -36,7 +36,7 @@ def ajouter_vehicule(data):
     annee = data["annee"]
     couleur = data["couleur"]
     prix_km = data["prix_km"]
-    prix = data["prix"]
+    prix = data["price"]
 
     conn = sqlite3.connect('vehicules.db')
     cursor = conn.cursor()
@@ -59,7 +59,7 @@ def mettre_a_jour_vehicule(data):
     annee = data["annee"]
     couleur = data["couleur"]
     prix_km = data["prix_km"]
-    prix = data["prix"]
+    prix = data["price"]
 
     conn = sqlite3.connect('vehicules.db')
     cursor = conn.cursor()

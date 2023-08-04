@@ -73,7 +73,7 @@ def extract_json_from_script(script_content):
         price_value = '0'
 
     price_entry = {
-        "name": "Prix",
+        "name": "Price",
         "value": price_value
     }
 
@@ -141,7 +141,10 @@ def format_anibis_to_scout24(data, url_of_vhc):
         Dealer_Address = None
 
         URL = url_of_vhc
-        Price = "Unknown"
+    try:
+        Price = next(item['value'].strip() for item in details if item['name'] == "Price")
+    except:
+        Price = None
     
     car = {
         "URL": URL,
@@ -240,25 +243,6 @@ def extract_data_scout24(content):
     # print(vhc_data)
     return vhc_data
 
-# def extract_name_from_url(url):
-#     if not url:
-#         return None
-#     match = re.search(r'(voitures|motos)/([^?]+)', url, re.IGNORECASE)
-#     if match:
-#         return match.group(2)
-#     return None
-
-# def get_name_from_data(data):
-#     first_url = get_first_url(data)
-#     return extract_name_from_url(first_url)
-
-
-# def get_first_url(data):
-#     if isinstance(data, list) and len(data) > 0:
-#         if isinstance(data[0], dict) and 'URL' in data[0]:
-#             return data[0]['URL']
-#     return None
-
 # def save_to_json(data):
 #     today_str = datetime.today().strftime('%Y-%m-%d')
 #     counter = 1
@@ -293,43 +277,45 @@ def extract_data_scout24(content):
 #         print(f"Error while writing to file: {e}")
 
 def add_ref(data):
-    for vehicle in data:
-        # print(f"data\n{data}\n end of data\n")
-        name_number = 5
+    for sublist in data:
+        for vehicle in sublist:
+            # print(f"sublist:\n{sublist}\n")
+            # print(f"vehicle:\n{vehicle}\n")
+            name_number = 5
 
-        if 'Type' in vehicle and vehicle['Type']:
-            name_number = 1
-            type_part = vehicle['Type'][:3]
-        else:
-            type_part = ''
+            if 'Type' in vehicle and vehicle['Type']:
+                name_number = 1
+                type_part = vehicle['Type'][:3]
+            else:
+                type_part = ''
 
-        name_part = vehicle['Name'][:name_number].replace(' ', '')
-        mileage_part = vehicle['Mileage'].replace(' km', '').replace("'", '')
+            name_part = vehicle['Name'][:name_number].replace(' ', '')
+            mileage_part = vehicle['Mileage'].replace(' km', '').replace("'", '')
 
-        if 'Cm3' in vehicle and vehicle['Cm3']:
-            cm3_part = vehicle['Cm3']
-        else:
-            cm3_part = ''
+            if 'Cm3' in vehicle and vehicle['Cm3']:
+                cm3_part = vehicle['Cm3']
+            else:
+                cm3_part = ''
 
-        if 'First Registration Date' in vehicle and vehicle['First Registration Date']:
-            registration_date = vehicle['First Registration Date']
-        else:
-            registration_date = ''
+            if 'First Registration Date' in vehicle and vehicle['First Registration Date']:
+                registration_date = vehicle['First Registration Date']
+            else:
+                registration_date = ''
 
-        if 'Color' in vehicle and vehicle['Color']:
-            color_part = vehicle['Color']
-        else:
-            color_part = ''
+            if 'Color' in vehicle and vehicle['Color']:
+                color_part = vehicle['Color']
+            else:
+                color_part = ''
 
-        ref_str = f"{name_part}{type_part}{mileage_part}{color_part}{registration_date}{cm3_part}"
-        vehicle['Ref'] = ref_str
+            ref_str = f"{name_part}{type_part}{mileage_part}{color_part}{registration_date}{cm3_part}"
+            vehicle['Ref'] = ref_str
 
     return data
 
 def add_prixkm(data):
     # grouped_vhc = sort_vhc.group_vehicles_by_name_and_cylindree(vehicle)
     # ranked_vhc = sort_vhc.rank_vehicules(grouped_vhc)
-    data_prixkm = sort_vhc.rank_vehicules(data)
+    data_prixkm = sort_vhc.rank_vehicles(data)
     # vhc_DB
     return data_prixkm
 
@@ -346,8 +332,9 @@ def extract_vehicle_data(urls_to_scrape):
             extracted_data = extract_data_scout24(content)
         if source == "anibis":
             extracted_data = extract_data_anibis(url)
-        print(f"extracted_data:\n{extracted_data}\n")
+        # print(f"extracted_data:\n{extracted_data}\n")
         all_data.append(extracted_data)
+        print(OK_COLOR + "Scraped" + RESET_COLOR)
     return all_data
 
 def main(urls_to_scrape):
@@ -355,6 +342,7 @@ def main(urls_to_scrape):
     extracted_data = extract_vehicle_data(urls_to_scrape)
     # print(f"extracted_data:\n{extracted_data}\n")
     data_ref = add_ref(extracted_data)
+    # print(f"data_ref:\n{data_ref}\n")
     data_prixkm = add_prixkm(data_ref)
     # print(f"data_prixkm:\n{data_prixkm}\n")
     print(OK_COLOR + "Scrap done!" + RESET_COLOR)
