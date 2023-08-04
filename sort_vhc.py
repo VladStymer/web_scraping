@@ -1,10 +1,10 @@
 import os
-import json
 import smtp_transfer
 from datetime import date
 from datetime import time
 from datetime import datetime
 from dotenv import load_dotenv
+# from vhc_DB import recuperer_vehicules
 
 load_dotenv()
 MODE = int(os.getenv("MODE"))
@@ -31,16 +31,16 @@ def should_send_email():
     return morning_start <= current_time <= morning_end or evening_start <= current_time <= evening_end
 
 
-def load_file(file_name):
-    try:
-        with open(file_name, 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        print(ERROR_COLOR + f"Le fichier {file_name} n'a pas été trouvé." + RESET_COLOR)
-        return None
-    except json.JSONDecodeError as e:
-        print(ERROR_COLOR + f"Erreur de décodage JSON : {e}" + RESET_COLOR)
-        return None
+# def load_file(file_name):
+#     try:
+#         with open(file_name, 'r') as file:
+#             return json.load(file)
+#     except FileNotFoundError:
+#         print(ERROR_COLOR + f"Le fichier {file_name} n'a pas été trouvé." + RESET_COLOR)
+#         return None
+#     except json.JSONDecodeError as e:
+#         print(ERROR_COLOR + f"Erreur de décodage JSON : {e}" + RESET_COLOR)
+#         return None
 
 def normalise(values):
     mean = sum(values) / len(values)
@@ -69,6 +69,11 @@ def rank_vehicules(vehicules):
     norm_mileages = normalise(mileages)
     
     scores = [-p - m for p, m in zip(norm_prices, norm_mileages)]
+
+    # Associer chaque score à son véhicule
+    for vehicle, score in zip(vehicules, scores):
+        vehicle["prix_km"] = score
+
     
     ranked_vehicules = [vehicules[i] for i in sorted(range(len(scores)), key=lambda k: scores[k], reverse=True)]
     
@@ -76,17 +81,63 @@ def rank_vehicules(vehicules):
 
 
 
-def group_vehicles_by_name(vehicles_list):
-    grouped_vehicles = {}
+# def group_vehicles_by_name(vehicles_list):
+#     grouped_vehicles = {}
     
-    for vehicle in vehicles_list:
-        name = vehicle["Name"]
-        if name in grouped_vehicles:
-            grouped_vehicles[name].append(vehicle)
-        else:
-            grouped_vehicles[name] = [vehicle]
+#     for vehicle in vehicles_list:
+#         name = vehicle["Name"]
+#         if name in grouped_vehicles:
+#             grouped_vehicles[name].append(vehicle)
+#         else:
+#             grouped_vehicles[name] = [vehicle]
             
+#     return grouped_vehicles
+
+# def group_vehicles_by_name_and_cylindree(vehicles):
+#     # vehicles = recuperer_vehicules()
+#     grouped_vehicles = {}
+
+#     for vehicle in vehicles:
+#         if 'Type' in vehicle:
+#             name_key = vehicle["Name"]
+#             model_key = vehicle["Type"]
+#         else:
+#             name_key = vehicle["marque"][:5]
+#         cylindree_key = vehicle["Cylindrée"] if vehicle["Cylindrée"] else ""
+#         key = f"{name_key}_{cylindree_key}_{model_key}"
+
+#         # Ajout du véhicule au groupe correspondant dans le dictionnaire
+#         if key not in grouped_vehicles:
+#             grouped_vehicles[key] = []
+#         grouped_vehicles[key].append(vehicle)
+#     print(f"grouped_vehicles: {grouped_vehicles}")
+#     return grouped_vehicles
+
+def group_vehicles_by_name_and_cylindree(vehicle):
+    grouped_vehicles = {}
+
+    # for vehicle in vehicles:
+        # Récupération du nom, modèle et cylindrée
+    name = vehicle.get("Name", "")
+    model = vehicle.get("Type", "")
+    cylindree = vehicle.get("Cylindrée", "")
+    carburant = vehicle.get("Type de carburant", "")
+
+    # Si le modèle 'Type' n'est pas disponible, utilisez les deux premiers mots du 'nom'
+    if not model:
+        name_parts = name.split()  # Divisez le nom en mots
+        name = " ".join(name_parts[:2])  # Utilisez seulement les deux premiers mots comme nom
+
+    # Générez une clé à partir du nom, modèle et cylindrée
+    key = f"{name}_{model}_{cylindree}"
+
+    # Ajout du véhicule au groupe correspondant dans le dictionnaire
+    if key not in grouped_vehicles:
+        grouped_vehicles[key] = []
+    grouped_vehicles[key].append(vehicle)
+
     return grouped_vehicles
+
 
 
 
@@ -133,7 +184,7 @@ def main(extracted_data):
         else:
             print("Not the right time to send an email")
     elif MODE == 1:
-        grouped_by_name = group_vehicles_by_name(extracted_data)
+        grouped_by_name = group_vehicles_by_name_and_cylindree(extracted_data)
         for key, value in grouped_by_name.items():
             ranked = rank_vehicules(value)
             name = ranked[0]['Name'][:16] if ranked else "default"
