@@ -1,6 +1,7 @@
 downloaded_images
 data*
 .env
+*.db
 *.json
 vehicules_list.txt
 new_vehicules_list.txt

@@ -26,8 +26,8 @@ def report_new_vehicles_via_email(all_new_vehicules):
     with open('new_vehicules_list.txt', 'a') as file:
         email_content = "Voici les nouveaux véhicules trouvés:\n\n"
         for v in all_new_vehicules:
-            vehicle_name = v['Name'][:16]
-            dealer_name = v['Dealer Name'][:27]
+            vehicle_name = v['name'][:16]
+            dealer_name = v['Dealer name'][:27]
             price = f"{v['Price']}CHF"
             mileage = f"{v['Mileage']}km"
             file.write(f"{vehicle_name} | {dealer_name.ljust(30)} | Prix: {price.rjust(10)} | Kilométrage: {mileage.rjust(8)}\n\n")

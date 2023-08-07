@@ -1,130 +1,140 @@
+import os
 import sqlite3
+from datetime import datetime
+from dotenv import load_dotenv
 import sort_vhc
 
-def vehicle_exists(conn, ref):
-    """Vérifie si un véhicule existe déjà dans la base de données."""
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM vehicules WHERE ref=?', (ref,))
-    return cursor.fetchone() is not None
 
-def prix_km():
-    # Connexion à la base de données
-    conn = sqlite3.connect('vehicules.db')
+load_dotenv()
+debug_mode = os.getenv("DEBUG", "False").lower() == "true"
+WARNING_COLOR = os.getenv("WARNING_COLOR").encode().decode('unicode_escape')
+OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
+ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
+RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
-    # Récupération des données du véhicule  
-    data = recuperer_vehicules()
+class DatabaseContext:
+    def __enter__(self):
+        self.conn = sqlite3.connect('vehicules.db')
+        self.cursor = self.conn.cursor()
+        return self.cursor
 
-    # Vérification de l'existence du véhicule dans la base de données
-    if not vehicle_exists(conn, data["ref"]):
-        # Calcul du rapport prix/km
-        price_per_km = sort_vhc.run_interpret(data)
-        data["price_per_km"] = price_per_km
-
-        # Insertion du véhicule
-        ajouter_vehicule(conn, data)
-
-        # Calcul et mise à jour de la moyenne générale
-        # average = calculate_average_for_model(conn, data["brand"], data["model"])
-        # update_average_for_model(conn, data["brand"], data["model"], average)
-
-
-
-def ajouter_vehicule(data):
-    ref = data["Ref"]
-    marque = data["marque"]
-    modele = data["modele"]
-    annee = data["annee"]
-    couleur = data["couleur"]
-    prix_km = data["prix_km"]
-    prix = data["price"]
-
-    conn = sqlite3.connect('vehicules.db')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-    INSERT INTO vehicules (ref, marque, modele, annee, couleur, prix_km, prix)
-    VALUES (?, ?, ?, ?)
-    ''', (ref, marque, modele, annee, couleur, prix_km, prix))
-
-    conn.commit()
-    conn.close()
-
-def mettre_a_jour_vehicule(data):
-    if not vehicle_exists():
-        print(f"Le véhicule {data['Ref']} n'existe pas dans la base de données.")
-        return
-    ref = data["Ref"]
-    marque = data["marque"]
-    modele = data["modele"]
-    annee = data["annee"]
-    couleur = data["couleur"]
-    prix_km = data["prix_km"]
-    prix = data["price"]
-
-    conn = sqlite3.connect('vehicules.db')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-    UPDATE vehicules
-    SET marque = ?, modele = ?, annee = ?, couleur = ?, prix_km = ?, prix = ?
-    WHERE ref = ?
-    ''', (marque, modele, annee, couleur, prix_km, prix, ref))
-
-    conn.commit()
-    conn.close()
-
-
-def recuperer_vehicules():
-    conn = sqlite3.connect('vehicules.db')
-    cursor = conn.cursor()
-
-    cursor.execute('SELECT * FROM vehicules')
-    tous_les_vehicules = cursor.fetchall()
-
-    conn.close()
-    return tous_les_vehicules
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            self.conn.commit()
+        else:
+            pass
+        self.conn.close()
 
 def init_db():
-    # Connecter à la base de données (ou la créer si elle n'existe pas)
-    conn = sqlite3.connect('vehicules.db')
-    cursor = conn.cursor()
+     with DatabaseContext() as cursor:
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS vehicules (
+            id INTEGER PRIMARY KEY,
+            url TEXT,
+            ref TEXT,
+            marque TEXT,
+            modele TEXT,
+            annee INTEGER,
+            couleur TEXT,
+            transmission TEXT,
+            Roues motrices TEXT,
+            kilometrage INTEGER,
+            prix_km INTEGER,
+            prix INTEGER,
+            nom_vendeur TEXT,
+            adresse_vendeur TEXT,
+            année TEXT,
+            Puissance TEXT,
+            Cylindrée INTEGER,
+            carburant TEXT
+        )
+        ''')
 
-    # Créer une table pour les véhicules
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS vehicules (
-        id INTEGER PRIMARY KEY,
-        ref TEXT,
-        marque TEXT,
-        modele TEXT,
-        annee INTEGER,
-        couleur TEXT,
-        transmission TEXT,
-        Roues motrices TEXT,
-        kilometrage INTEGER,
-        prix_km INTEGER,
-        prix INTEGER,
-        Nom du vendeur TEXT,
-        Adresse du vendeur TEXT,
-        Première mise en circulation TEXT,
-        Cylindrée INTEGER,
-        Type de carburant TEXT
-    )
-    ''')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS historique (
+            id INTEGER PRIMARY KEY,
+            vehicule_id INTEGER,
+            prix INTEGER,
+            km INTEGER,
+            date TEXT,
+            FOREIGN KEY (vehicule_id) REFERENCES vehicules(id)
+        )
+        ''')
 
-    conn.commit()
-    conn.close()
+def vehicle_exists(ref):
+    with DatabaseContext() as cursor:
+        cursor.execute('SELECT * FROM vehicules WHERE ref=?', (ref,))
+        return cursor.fetchone() is not None
+
+def ajouter_historique(vehicule_id, prix, km, date):
+    with DatabaseContext() as cursor:
+        cursor.execute('''
+        INSERT INTO historique (vehicule_id, prix, km, date)
+        VALUES (?, ?, ?, ?)
+        ''', (vehicule_id, prix, km, date))
+
+def ajouter_vehicule(data):
+
+
+    #CHECK URL FOR AUTOSCOUT24
+
+    url = data["URL"]
+    ref = data["Ref"]
+    marque = data["name"]
+    try:
+        modele = data["Type"]
+    except:
+        modele = None
+    transmission = data["Transmission"]
+    Km = data["Mileage"]
+    prix = data["Price"]
+    nom_vendeur = data["Dealer Name"]
+    adresse_vendeur = data["Dealer Address"]
+    année = data["First Registration Date"]
+    puissance = data["Engine Power"]
+    carburant = data["Fuel Type"]
+    prix_km = data["prix_km"]
+
+    with DatabaseContext() as cursor:
+        cursor.execute('''
+        INSERT INTO vehicules (url, ref, marque, modele, transmission, kilometrage, prix, nom_vendeur, adresse_vendeur, année, puissance, carburant, prix_km)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (url, ref, marque, modele, transmission, Km, prix, nom_vendeur, adresse_vendeur, année, puissance, carburant, prix_km))
+
+def recuperer_vehicules():
+    with DatabaseContext() as cursor:
+        cursor.execute('SELECT * FROM vehicules')
+        tous_les_vehicules = cursor.fetchall()
+
+        return tous_les_vehicules
+
+
+def compare_data_of_same_vhc(data):
+    date = datetime.today().strftime('%Y-%m-%d')
+    with DatabaseContext() as cursor:
+        cursor.execute('SELECT id, ref FROM vehicules WHERE ref=?', (data["Ref"],))
+        vehicule = cursor.fetchone()
+
+        if vehicule:
+            ajouter_historique(vehicule[0], data["Price"], data["Mileage"], date)
 
 def main(one_page_of_vhc_data):
+    print(WARNING_COLOR + "Lancement de vhc_DB..." + RESET_COLOR)
     init_db()
+    # print(f"DATA: {one_page_of_vhc_data}")
     for data in one_page_of_vhc_data:
         if vehicle_exists(data["Ref"]):
-            mettre_a_jour_vehicule(data)
+            compare_data_of_same_vhc(data)
         else:
             ajouter_vehicule(data)
-    print(recuperer_vehicules())
+    # print(recuperer_vehicules())
+    # print(recuperer_vehicules()[1])
+    # print(recuperer_vehicules()[2][0])
+    sort_vhc.vehicules_vers_txt()
+    print(OK_COLOR + "vhc_DB done!" + RESET_COLOR)
 
-
-
+def run_database(one_page_of_vhc_data):
+    main(one_page_of_vhc_data)
 
 if __name__ == "__main__":
     main()

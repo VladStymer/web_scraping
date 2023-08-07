@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import scrap
 from vhc_DB import init_db
 from utils import set_driver
@@ -16,7 +17,7 @@ RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
 URLS = {
     "URL_clio":     os.getenv("URL_CLIO"),
-    # "URL_tuonoV4":  os.getenv("URL_TUONO_V4"),
+    "URL_tuonoV4":  os.getenv("URL_TUONO_V4"),
     # "URL_195CV":    os.getenv("URL_195CV"),
     "URL_anibis_bike": os.getenv("URL_anibis_bike"),
 }
@@ -36,6 +37,7 @@ def generate_url(base_url, source, page_number=1):
         return f"{base_url}{page}{page_number}"
 
 def page_exists(driver, url, source):
+    time.sleep(1)
     driver.get(url)
     if source == "anibis":
         if "4qsc3d" in driver.page_source:
@@ -77,10 +79,14 @@ def main():
     print(WARNING_COLOR + "Lancement du main..." + RESET_COLOR)
     init_db()
 
-    driver = set_driver()
+    try:
+        driver = set_driver()
+    except:
+        print(ERROR_COLOR + "Can't set driver" + RESET_COLOR)
+        sys.exit(1)
     urls_to_scrape = collect_urls_to_scrape(driver, URLS)
+    scrap.run_scraping(driver, urls_to_scrape)
     driver.quit()
-    scrap.run_scraping(urls_to_scrape)
     print(OK_COLOR + "Main done!" + RESET_COLOR)
 
 if __name__ == "__main__":
