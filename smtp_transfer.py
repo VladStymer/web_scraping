@@ -10,6 +10,23 @@ OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
 ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
 RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
+def time_from_env(key):
+    """Convertit une chaîne HH:MM depuis .env en un objet time."""
+    hours, minutes = map(int, os.getenv(key).split(":"))
+    return time(hours, minutes)
+
+def should_send_email():
+    current_time = datetime.now().time()  # Obtient l'heure actuelle
+    
+    # Récupérer les heures de début et de fin depuis le fichier .env
+    morning_start = time_from_env('MORNING_START')
+    morning_end = time_from_env('MORNING_END')
+    evening_start = time_from_env('EVENING_START')
+    evening_end = time_from_env('EVENING_END')
+
+    # Vérifier si l'heure actuelle se situe dans une des plages horaires
+    return morning_start <= current_time <= morning_end or evening_start <= current_time <= evening_end
+
 def send_email(subject, content, to_email, attachment_path):
     msg = EmailMessage()
     msg.set_content(content)

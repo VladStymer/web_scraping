@@ -47,16 +47,8 @@ def get_content_from_url(driver, URL):
     except TimeoutException:
         print(ERROR_COLOR + "Timed out waiting for page to load" + RESET_COLOR)
     
-
-
-
-    # Récupérez le code source de la page
     page_source = driver.page_source
 
-    # driver.quit()
-    # if debug_mode:
-    #     print(f"get_content_from_url: page_source={page_source}")
-    # print(f"page_source == {page_source}\n end of page_source\n")
 
     return page_source
     
@@ -106,53 +98,53 @@ def format_anibis_to_scout24(data, url_of_vhc):
     try:
         Name = next(item['value'].strip() for item in details if item['name'] == "Marque")
     except:
-        Name = None
+        Name = "No_value"
     try:
         Type = next(item['value'].strip() for item in details if item['name'] == "Modèle")
     except:
-        Type = None
+        Type = "No_value"
     try:
         Color = next(item['value'].strip() for item in details if item['name'] == "Couleur extérieure")
     except:
-        Color = None
+        Color = "No_value"
     try:
         Transmission = next(item['value'].strip() for item in details if item['name'] == "Transmission")
     except:
-        Transmission = None
+        Transmission = "No_value"
     try:
         Wheel_Drive = next(item['value'].strip() for item in details if item['name'] == "Roues motrices")
     except:
-        Wheel_Drive = None
+        Wheel_Drive = "No_value"
     try:
         Mileage = next(item['value'].strip() for item in details if item['name'] == "Kilomètres")
     except:
-        Mileage = None
+        Mileage = "No_value"
     try:
         First_Registration_Date = next(item['value'].strip() for item in details if item['name'] == "Année")
     except:
-        First_Registration_Date = None
+        First_Registration_Date = "No_value"
     try:
         cm3 = next(item['value'].strip().split()[0] for item in details if item['name'] == "Cylindrée (Cm3)")
     except:
-        cm3 = None
+        cm3 = "No_value"
     try:
         Fuel_Type = next(item['value'].strip() for item in details if item['name'] == "Carburant")
     except:
-        Fuel_Type = None
+        Fuel_Type = "No_value"
     try:
         Dealer_Name = "Private Seller" 
     except:
-        Dealer_Name = None
+        Dealer_Name = "No_value"
     try:
         Dealer_Address = data["location"]["zipCity"] + ", " + ["street"]
     except:
-        Dealer_Address = None
+        Dealer_Address = "No_value"
 
         URL = url_of_vhc
     try:
         Price = next(item['value'].strip() for item in details if item['name'] == "Price")
     except:
-        Price = None
+        Price = "No_value"
     
     car = {
         "URL": URL,
@@ -167,18 +159,50 @@ def format_anibis_to_scout24(data, url_of_vhc):
         "Dealer Address": Dealer_Address,
         "First Registration Date": First_Registration_Date,
         "Cm3": cm3,
-        "Fuel Type": Fuel_Type
+        "Fuel Type": Fuel_Type,
+        "vhc_type": utils.identify_vhc_type(url_of_vhc)
+
     }
 
     return car
 
-def extract_details_from_scout24(data):
+def extract_details_from_scout24(data, url_of_vhc):
 
-    # Récupérer la valeur de 'listing_makeName'
-    make_name = data['props']['pageProps']['listing']['make']['name']
-    print(make_name)
+    URL = url_of_vhc
+    Name = data['props']['pageProps']['listing']['make']['name']
+    Type = data['props']['pageProps']['listing']['model']['name']
+    Color = data['props']['pageProps']['listing']['bodyColor']
+    Transmission = data['props']['pageProps']['listing']['transmissionType']
+    Wheel_Drive = data['props']['pageProps']['listing']['driveType']
+    Mileage = str(data['props']['pageProps']['listing']['mileage'])
+    Price = str(data['props']['pageProps']['listing']['price'])
+    Dealer_Name = data['props']['pageProps']['seller']['name']
+    try:
+        Dealer_Address = data['props']['pageProps']['seller']['address'] + ", " + data['props']['pageProps']['seller']['city']
+    except:
+        Dealer_Address = "Inconnue"
+    First_Registration_Date = data['props']['pageProps']['listing']['firstRegistrationDate']
+    cm3 = data['props']['pageProps']['listing']['cubicCapacity']
+    Fuel_Type = data['props']['pageProps']['listing']['fuelType']
 
-    return make_name
+    car = {
+        "URL": URL,
+        "name": Name,
+        "Type": Type,
+        "Color": Color,
+        "Transmission": Transmission,
+        "Wheel Drive": Wheel_Drive,
+        "Mileage": Mileage,
+        "Price": Price,
+        "Dealer Name": Dealer_Name,
+        "Dealer Address": Dealer_Address,
+        "First Registration Date": First_Registration_Date,
+        "Cm3": cm3,
+        "Fuel Type": Fuel_Type,
+        "vhc_type": utils.identify_vhc_type(url_of_vhc)
+    }
+
+    return car
 
 
 
@@ -188,9 +212,11 @@ def extract_data(driver, url_page, source):
     # print(f"url_page == {url_page}")
     urls_list = []
     json_list = []
+    # wait = WebDriverWait(driver, 20)
 
-    time.sleep(1)
+    time.sleep(0.5)
     driver.get(url_page)
+    time.sleep(0.5)
     urls = get_all_direct_urls_of_vehicles(driver, source)
     urls_list.append(urls)
 
@@ -199,97 +225,71 @@ def extract_data(driver, url_page, source):
         for url_of_vhc in url_list:
             # print(f"urls_list == {urls_list}")
             # print(f"url_of_vhc == {url_of_vhc}\n end of url_of_vhc\n")
+            print(WARNING_COLOR + "URL of vhc " + RESET_COLOR + url_of_vhc)
             try:
-                time.sleep(1)
                 driver.get(url_of_vhc)
-            except:
-                print(ERROR_COLOR + "Error while getting url_of_vhc" + RESET_COLOR)
+                # wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/script[1]')))
+                script_content = driver.find_element(By.XPATH, '/html/body/script[1]').get_attribute('innerHTML')
+            except (NoSuchElementException, TimeoutException) as e:
+                print(ERROR_COLOR + "Error while getting script_content: " + str(e) + RESET_COLOR)
                 return
-            
-            script_content = driver.find_element(By.XPATH, '/html/body/script[1]').get_attribute('innerHTML')
             # print(f"script_content == {script_content}\n end of script_content\n")
             if source == "anibis":
                 data_string = extract_json_from_script_anibis(script_content)
                 data = json.loads(data_string)
                 formated = format_anibis_to_scout24(data, url_of_vhc)
-                print(f"formated == {formated}\n end of formated\n")
-                json_list.append(formated)
+                # if int(formated.get("cylinder", 0)) > 600 or not formated.get("cylinder", 0):
+                if formated:
+                    json_list.append(formated)
             elif source == "scout24":
                 data = json.loads(script_content)
-                cleaned_script_content = extract_details_from_scout24(data)
-                json_list.append(cleaned_script_content)
-                
+                cleaned_script_content = extract_details_from_scout24(data, url_of_vhc)
+                # if int(cleaned_script_content.get("cylinder", 0)) > 600:
+                if cleaned_script_content:
+                    json_list.append(cleaned_script_content)
             # print(f"data:\n {data}\nend of data\n")
-    # driver.quit()
-    print(f"json_list:\n\n\n {json_list}\nend of json_list\n")
     return json_list
 
-# def extract_data_scout24(driver, url_page, source):
-#     # print(f"url_page == {url_page}")
-#     urls_list = []
-#     json_list = []
-
-#     time.sleep(1)
-#     driver.get(url_page)
-#     urls = get_all_direct_urls_of_vehicles(driver, source)
-#     # print(f"urls == {urls}")
-#     urls_list.append(urls)
-
-#     # print(f"urls_list == {urls_list}")
-#     for url_list in urls_list:
-#         for url_of_vhc in url_list:
-#             # print(f"urls_list == {urls_list}")
-#             # print(f"url_of_vhc == {url_of_vhc}\n end of url_of_vhc\n")
-#             try:
-#                 time.sleep(1)
-#                 driver.get(url_of_vhc)
-#             except:
-#                 print(ERROR_COLOR + "Error while getting url_of_vhc" + RESET_COLOR)
-#                 return
-            
-            
-#             data = json.loads(script_content)
-#             json_list.append(data)
-    
-#     return json_list
-
 def add_ref(data):
-    try:
-        for sublist in data:
-            for vehicle in sublist:
-                # print(f"sublist:\n{sublist}\n")
-                print(f"vehicle:\n{vehicle}\n")
-                name_number = 5
+    for sublist in data:
+        for vehicle in sublist:
+            # print(f"sublist:\n{sublist}\n")
+            # print(f"vehicle:\n{vehicle}\n")
+            name_number = 5
 
-                if 'Type' in vehicle and vehicle['Type']:
-                    name_number = 1
-                    type_part = vehicle['Type'][:3]
-                else:
-                    type_part = ''
+            if 'Type' in vehicle and vehicle['Type']:
+                name_number = 1
+                type_part = vehicle['Type'][:3]
+            else:
+                type_part = ''
+                print(f"no type for {vehicle['name']}")
 
-                name_part = vehicle['name'][:name_number].replace(' ', '')
-                mileage_part = vehicle['Mileage'].replace(' km', '').replace("'", '')
+            name_part = vehicle['name'][:name_number].replace(' ', '')
+            mileage_part = vehicle['Mileage'].replace(' km', '').replace("'", '')
 
-                if 'Cm3' in vehicle and vehicle['Cm3']:
-                    cm3_part = vehicle['Cm3']
-                else:
-                    cm3_part = ''
+            if 'Cm3' in vehicle and vehicle['Cm3']:
+                cm3_part = vehicle['Cm3']
+            else:
+                cm3_part = ''
+                print(f"no cm3 for {vehicle['name']}")
 
-                if 'First Registration Date' in vehicle and vehicle['First Registration Date'] and isinstance(vehicle['First Registration Date'], int):
-                    registration_date = vehicle['First Registration Date']
-                else:
-                    registration_date = ''
+            if 'First Registration Date' in vehicle and vehicle['First Registration Date'] and isinstance(vehicle['First Registration Date'], int):
+                registration_date = vehicle['First Registration Date']
+            else:
+                registration_date = ''
 
-                if 'Color' in vehicle and vehicle['Color']:
-                    color_part = vehicle['Color']
-                else:
-                    color_part = ''
+            if 'Color' in vehicle and vehicle['Color']:
+                color_part = vehicle['Color']
+            else:
+                color_part = ''
+                print(f"no color for {vehicle['name']}")
 
-                ref_str = f"{name_part}{type_part}{mileage_part}{color_part}{registration_date}{cm3_part}"
+            ref_str = f"{name_part}{type_part}{mileage_part}{color_part}{registration_date}{cm3_part}"
+            # print(f"ref_str == {ref_str}\n end of ref_str\n")
+            try:
                 vehicle['Ref'] = ref_str
-    except:
-        print(ERROR_COLOR + "Error while adding ref" + RESET_COLOR)
-
+            except:
+                print(ERROR_COLOR + f"Error while adding ref to {vehicle['name']},\n vehicle == {vehicle}" + RESET_COLOR)
     return data
 
 def add_prixkm(data):
@@ -308,7 +308,8 @@ def extract_vehicle_data(driver, urls_to_scrape):
         source = utils.identify_url_source(url)
         extracted_data = extract_data(driver, url, source)
         # print(f"extracted_data:\n{extracted_data}\n")
-        all_data.append(extracted_data)
+        if extracted_data:
+            all_data.append(extracted_data)
         print(OK_COLOR + "Scraped" + RESET_COLOR)
     return all_data
 
@@ -322,7 +323,7 @@ def main(driver, urls_to_scrape):
     data_ref = add_ref(extracted_data)
     # print(f"data_ref:\n{data_ref}\n")
     data_complet = add_prixkm(data_ref)
-    # print(f"data_prixkm:\n{data_prixkm}\n")
+    # print(f"data_complet:\n{data_complet}\n")
     vhc_DB.run_database(data_complet)
     print(OK_COLOR + "Scrap done!" + RESET_COLOR)
 

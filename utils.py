@@ -19,13 +19,21 @@ def identify_url_source(url):
     else:
         return "Can't identify URL source"
     
+def identify_vhc_type(url):
+    if "moto" in url:
+        return "bike"
+    elif "auto" or "automobiles" in url:
+        return "car"
+    else:
+        return "Can't identify vehicle type"
+    
 def set_driver():
     DRIVER_PATH = os.getenv("DRIVER_PATH")
 
     service = ChromeService(executable_path=DRIVER_PATH)
 
     chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--headless")
     chrome_options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")

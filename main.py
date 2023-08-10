@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import scrap
+import sort_vhc
 from vhc_DB import init_db
 from utils import set_driver
 from dotenv import load_dotenv
@@ -19,7 +20,10 @@ URLS = {
     "URL_clio":     os.getenv("URL_CLIO"),
     "URL_tuonoV4":  os.getenv("URL_TUONO_V4"),
     # "URL_195CV":    os.getenv("URL_195CV"),
+    "URL_scout24_bike": os.getenv("URL_scout24_bike"),
     "URL_anibis_bike": os.getenv("URL_anibis_bike"),
+    "URL_anibis_test": os.getenv("URL_anibis_test"),
+    "URL_scout24_test": os.getenv("URL_scout24_test"),
 }
 
 def generate_url(base_url, source, page_number=1):
@@ -29,6 +33,9 @@ def generate_url(base_url, source, page_number=1):
         page="&page="
     else:
         sys.exit(f"generate_url() -> Can't identify URL source: {source}")
+    if page in base_url:
+        if page_number == 1:
+            return base_url.split(page)[0]
     if debug_mode:
         print(f"generate_url: base_url={base_url}, page_number={page_number}")
     if page_number == 1:
@@ -78,16 +85,39 @@ def collect_urls_to_scrape(driver, URLS):
 def main():
     print(WARNING_COLOR + "Lancement du main..." + RESET_COLOR)
     init_db()
+    
+    while True:  # Boucle infinie
+        print("\nOptions disponibles :")
+        print("1. run all the program")
+        print("2. print_db")
+        print("3. sort_bike")
+        print("4. sort_car")
+        print("5. export_in_txt")
+        print("666. quitter")
+        
+        choice = input("Entrez votre choix : ")
 
-    try:
-        driver = set_driver()
-    except:
-        print(ERROR_COLOR + "Can't set driver" + RESET_COLOR)
-        sys.exit(1)
-    urls_to_scrape = collect_urls_to_scrape(driver, URLS)
-    scrap.run_scraping(driver, urls_to_scrape)
-    driver.quit()
-    print(OK_COLOR + "Main done!" + RESET_COLOR)
+        if choice == "run all the program" or choice == "1":
+            try:
+                driver = set_driver()
+            except:
+                print(ERROR_COLOR + "Can't set driver" + RESET_COLOR)
+                sys.exit(1)
+            urls_to_scrape = collect_urls_to_scrape(driver, URLS)
+            scrap.run_scraping(driver, urls_to_scrape)
+            driver.quit()
+            print(OK_COLOR + "Main done!" + RESET_COLOR)
+        elif choice == "print_db" or choice == "2":
+            from vhc_DB import recuperer_vehicules
+            print(recuperer_vehicules())
+        elif choice == "sort" or choice == "3":
+            sort_vhc.analyze_vehicle_groups()
+        elif choice == "export_in_txt" or choice == "5":
+            sort_vhc.vehicules_vers_txt()
+        elif choice == "quitter" or choice == "666":
+            break
+        else:
+            print(ERROR_COLOR + "Choix invalide." + RESET_COLOR)
 
 if __name__ == "__main__":
     main()
