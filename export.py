@@ -1,5 +1,6 @@
 import os
 import sort_vhc
+import vhc_DB
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,10 +15,11 @@ def max_width(data, index):
     return max(len(str(row[index])) for row in data)
 
 def vehicules_vers_txt():
-    vehicules = sort_vhc.recuperer_vehicules_tries_par_nom_et_prix_km()
+    print(WARNING_COLOR + "Exporting vehicules to txt..." + RESET_COLOR)
+    vehicules = vhc_DB.recuperer_vehicules()
     
     rearranged_vehicules = []
-    
+    # print(f"vehicules: {vehicules}")
     for vehicule in vehicules:
         # print(f"vehicule: {vehicule}")
         vehicule = list(vehicule)
@@ -33,7 +35,7 @@ def vehicules_vers_txt():
 
     with open("vehicls_sorted.txt", "w", encoding="utf-8") as fichier:
         # Écrire les en-têtes de colonnes en premier
-        en_tetes = ["marque", "modele", "prix_km", "prix", "kilometrage", "annee", "couleur", "transmission",
+        en_tetes = ["id", "marque", "modele", "prix_km", "prix", "kilometrage", "annee", "couleur", "transmission",
                     "Roues motrices", "nom_vendeur", "adresse_vendeur", "Puissance", "Cylindrée", "carburant", "url", "ref"]
         
         # Use the 'format' method to format the headers with the maximum widths

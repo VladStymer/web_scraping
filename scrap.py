@@ -4,11 +4,11 @@ import time
 import json
 import utils 
 import vhc_DB
+import random
 import sort_vhc
-from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from dotenv import load_dotenv
 from selenium import webdriver
-from dotenv import load_dotenv
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
@@ -100,7 +100,8 @@ def format_anibis_to_scout24(data, url_of_vhc):
     except:
         Name = "No_value"
     try:
-        Type = next(item['value'].strip() for item in details if item['name'] == "Modèle")
+        full_type = next(item['value'].strip() for item in details if item['name'] == "Modèle")
+        Type = ' '.join(full_type.split()[:2])
     except:
         Type = "No_value"
     try:
@@ -171,6 +172,7 @@ def extract_details_from_scout24(data, url_of_vhc):
     URL = url_of_vhc
     Name = data['props']['pageProps']['listing']['make']['name']
     Type = data['props']['pageProps']['listing']['model']['name']
+    Type = ' '.join(data['props']['pageProps']['listing']['model']['name'].split()[:2])
     Color = data['props']['pageProps']['listing']['bodyColor']
     Transmission = data['props']['pageProps']['listing']['transmissionType']
     Wheel_Drive = data['props']['pageProps']['listing']['driveType']
@@ -212,11 +214,9 @@ def extract_data(driver, url_page, source):
     # print(f"url_page == {url_page}")
     urls_list = []
     json_list = []
-    # wait = WebDriverWait(driver, 20)
 
-    time.sleep(0.5)
     driver.get(url_page)
-    time.sleep(0.5)
+    time.sleep(random.uniform(0.1, 0.8))
     urls = get_all_direct_urls_of_vehicles(driver, source)
     urls_list.append(urls)
 

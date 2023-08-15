@@ -1,8 +1,10 @@
 import os
 import vhc_DB
 import sqlite3
+import export
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
+from collections import defaultdict
 # from vhc_DB import recuperer_vehicules
 
 load_dotenv()
@@ -12,6 +14,34 @@ OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
 ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
 RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
+def rank_vehicles(vehicles):
+    if not vehicles:
+        print("Aucun véhicule à classer.")
+        return []
+
+    # Flatten the list of vehicles
+    flat_vehicles = [v for sublist in vehicles for v in sublist]
+
+    # Extract and normalize prices and mileages
+    for vehicle in flat_vehicles:
+        # print(f"vehicle: {vehicle}")
+        # Handle 'Unknown' price
+        if vehicle["Price"] == 'Unknown':
+            vehicle["Price"] = None
+        else:
+            vehicle["Price"] = float(vehicle["Price"].replace("CHF", "").strip())
+
+        # Convert mileage to int
+        vehicle["Mileage"] = int(vehicle["Mileage"].replace("'", "").replace("km", "").strip())
+
+    # Calculate the price/km ratio directly
+    for vehicle in flat_vehicles:
+        if vehicle["Price"] is not None and vehicle["Mileage"] > 0:
+            vehicle["prix_km"] = round(vehicle["Price"] / vehicle["Mileage"], 3)
+        else:
+            vehicle["prix_km"] = None
+
+    return flat_vehicles
 
 def vhc_sorted_by_name():
     with vhc_DB.DatabaseContext() as cursor:
@@ -26,17 +56,28 @@ def vhc_sorted_by_name():
         # print(f"resultats: {resultats}")
         return resultats
 
+def normalize_model(model_name):
+    # Convert to uppercase, remove spaces and hyphens
+    words = model_name.upper().replace("-", " ").split()
+    # Sort the words and rejoin them
+    sorted_name = ''.join(sorted(words))
+    return sorted_name
+
+def extract_marque_modele(vehicle):
+    marque = vehicle[1]
+    modele = normalize_model(vehicle[2])
+    return marque, modele
+
 def group_vehicles_by_name():
     vehicles = vhc_sorted_by_name()
-    grouped_vehicles = {}
+    grouped = defaultdict(list)
 
     for vehicle in vehicles:
-        key = (vehicle[1], vehicle[2])  # marque, modele
-        if key not in grouped_vehicles:
-            grouped_vehicles[key] = []
-        grouped_vehicles[key].append(vehicle)
+        # print(f"vehicle: {vehicle}")
+        marque, modele = extract_marque_modele(vehicle)
+        grouped[(marque, modele)].append(vehicle)
     
-    return grouped_vehicles
+    return grouped
 
 def analyze_vehicle_groups():
     grouped_vehicles = group_vehicles_by_name()
@@ -47,41 +88,49 @@ def analyze_vehicle_groups():
         vhc_type = vehicles[0][-1]  # vhc_type from the first vehicle in the list
         sort_vhc(vhc_type, vehicles)
 
-def sort_vhc(vhc_type, vehicles):
-    segments_bike = [
-    (0, 1000),
-    (1001, 4000),
-    (4001, 7000),
-    (7001, 10000),
-    ]
-    segments_car = [
-    (0, 10000),
-    (10001, 40000),
-    (40001, 70000),
-    (70001, 100000),
-    ]
 
+def sort_vhc(vhc_type, vehicles):
     if vhc_type == "bike":
-        segments = segments_bike
+        segments = [
+            (0, 1000),
+            (1001, 2000),
+            (2001, 3000),
+            (3001, 4000),
+            (4001, 5000),
+            (5001, 6000),
+            (6001, 7000),
+            (7001, 8000),
+            (8001, 9000),
+            (9001, 10000)
+        ]
     elif vhc_type == "car":
-        segments = segments_car
-    conn = sqlite3.connect('vehicules.db')
-    cursor = conn.cursor()
+        segments = [
+            (0, 10000),
+            (10001, 40000),
+            (40001, 70000),
+            (70001, 100000),
+        ]
+    else:
+        print("Type de véhicule inconnu!")
+        return
 
     moyennes = []
 
     for start, end in segments:
-        query = """
-                SELECT AVG(prix) FROM vehicules 
-                WHERE kilometrage BETWEEN ? AND ? AND vhc_type = ?
-                """
-        cursor.execute(query, (start, end, vhc_type))
-        avg_price = cursor.fetchone()[0]
+        # Filtrez les véhicules du groupe actuel qui sont dans ce segment
+        filtered_vehicles = [vhc for vhc in vehicles if start <= vhc[5] <= end]  # assuming kilometrage is at index 5
+
+        # Calculez la moyenne des prix pour ces véhicules
+        total_price = sum(vhc[4] for vhc in filtered_vehicles)  # assuming prix is at index 4
+        avg_price = total_price / len(filtered_vehicles) if filtered_vehicles else None
+
         if avg_price:
             moyennes.append((start, end, avg_price))
-    draw_data(moyennes)
+    vhc_name = vehicles[0][1] + " " + vehicles[0][2]
+    export.vehicules_vers_txt()
+    draw_data(moyennes, vhc_name)
 
-def draw_data(moyennes):
+def draw_data(moyennes, vhc_name):
 
     # Extraire les points centraux des segments pour l'axe X
     x = [(start + end) / 2 for start, end, _ in moyennes]
@@ -90,9 +139,8 @@ def draw_data(moyennes):
     y = [avg for _, _, avg in moyennes]
 
     plt.plot(x, y, marker='o')
-    plt.title('Dépréciation des voitures en fonction du kilométrage')
+    plt.title(f'Prix moyen des {vhc_name} en fonction du kilométrage')
     plt.xlabel('Kilomètres')
-    plt.ylabel('Prix moyen (€)')
+    plt.ylabel('Prix moyen CHF')
     plt.grid(True)
     plt.show()
-    

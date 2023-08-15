@@ -2,11 +2,16 @@ import os
 import sys
 import time
 import scrap
+import random
+import vhc_DB
 import sort_vhc
 from vhc_DB import init_db
 from utils import set_driver
 from dotenv import load_dotenv
 from utils import identify_url_source
+
+
+
 
 
 load_dotenv()
@@ -44,7 +49,7 @@ def generate_url(base_url, source, page_number=1):
         return f"{base_url}{page}{page_number}"
 
 def page_exists(driver, url, source):
-    time.sleep(1)
+    time.sleep(random.uniform(0.1, 0.8))
     driver.get(url)
     if source == "anibis":
         if "4qsc3d" in driver.page_source:
@@ -90,8 +95,7 @@ def main():
         print("\nOptions disponibles :")
         print("1. run all the program")
         print("2. print_db")
-        print("3. sort_bike")
-        print("4. sort_car")
+        print("3. sort")
         print("5. export_in_txt")
         print("666. quitter")
         
@@ -108,8 +112,7 @@ def main():
             driver.quit()
             print(OK_COLOR + "Main done!" + RESET_COLOR)
         elif choice == "print_db" or choice == "2":
-            from vhc_DB import recuperer_vehicules
-            print(recuperer_vehicules())
+            print(vhc_DB.recuperer_vehicules())
         elif choice == "sort" or choice == "3":
             sort_vhc.analyze_vehicle_groups()
         elif choice == "export_in_txt" or choice == "5":

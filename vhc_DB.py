@@ -1,5 +1,6 @@
 import os
 import export
+import sort_vhc
 import sqlite3
 from datetime import datetime
 from dotenv import load_dotenv
@@ -95,12 +96,13 @@ def ajouter_vehicule(data):
     carburant = data["Fuel Type"]
     url = data["URL"]
     ref = data["Ref"]
+    vhc_type = data["vhc_type"]
 
     with DatabaseContext() as cursor:
         cursor.execute('''
-        INSERT INTO vehicules (marque, modele, prix_km, prix, kilometrage, annee, couleur, transmission, Roues_motrices, nom_vendeur, adresse_vendeur, Puissance, Cylindrée, carburant, url, ref)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (marque, modele, prix_km, prix, km, année, color, transmission, wheel_drive, nom_vendeur, adresse_vendeur, puissance, Cylindrée, carburant, url, ref))
+        INSERT INTO vehicules (marque, modele, prix_km, prix, kilometrage, annee, couleur, transmission, Roues_motrices, nom_vendeur, adresse_vendeur, Puissance, Cylindrée, carburant, url, ref, vhc_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (marque, modele, prix_km, prix, km, année, color, transmission, wheel_drive, nom_vendeur, adresse_vendeur, puissance, Cylindrée, carburant, url, ref, vhc_type))
 
 def recuperer_vehicules():
     with DatabaseContext() as cursor:
@@ -134,11 +136,8 @@ def main(one_page_of_vhc_data):
         else:
             # print("ajouter_vehicule")
             ajouter_vehicule(data)
-    # print(recuperer_vehicules())
-    # print(recuperer_vehicules()[1])
-    # print(recuperer_vehicules()[2][0])
 
-    export.vehicules_vers_txt()
+    sort_vhc.analyze_vehicle_groups()
     print(OK_COLOR + "vhc_DB done!" + RESET_COLOR)
 
 def run_database(one_page_of_vhc_data):
