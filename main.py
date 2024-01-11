@@ -21,6 +21,7 @@ OK_COLOR = os.getenv("OK_COLOR").encode().decode('unicode_escape')
 ERROR_COLOR = os.getenv("ERROR_COLOR").encode().decode('unicode_escape')
 RESET_COLOR = os.getenv("RESET_COLOR").encode().decode('unicode_escape')
 
+
 URLS = {
     "URL_clio":     os.getenv("URL_CLIO"),
     "URL_tuonoV4":  os.getenv("URL_TUONO_V4"),
@@ -29,6 +30,10 @@ URLS = {
     "URL_anibis_bike": os.getenv("URL_anibis_bike"),
     "URL_anibis_test": os.getenv("URL_anibis_test"),
     "URL_scout24_test": os.getenv("URL_scout24_test"),
+    "MT-09": os.getenv("MT-09"),
+    "MT-09_anibis" : os.getenv("MT-09_anibis"),
+    "NEW_MT_anibis" : os.getenv("NEW_MT_anibis"),
+    "NEW_MT" : os.getenv("NEW_MT"),
 }
 
 def generate_url(base_url, source, page_number=1):

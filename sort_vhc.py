@@ -36,7 +36,7 @@ def rank_vehicles(vehicles):
 
     # Calculate the price/km ratio directly
     for vehicle in flat_vehicles:
-        if vehicle["Price"] is not None and vehicle["Mileage"] > 0:
+        if vehicle["Price"] is not None and vehicle["Mileage"] > 500:
             vehicle["prix_km"] = round(vehicle["Price"] / vehicle["Mileage"], 3)
         else:
             vehicle["prix_km"] = None
