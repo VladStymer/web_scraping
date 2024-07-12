@@ -4,17 +4,17 @@ services:
     build:
       context: .
     volumes:
-      - ./data:/app/data  # Optional: Mount a volume for data persistence
+      - ./data:/app/data
     depends_on:
       - chrome
     environment:
-      - DISPLAY=:99  # Required for headless Chrome to run in Docker
-    networks:
-      - mynet
+      - DISPLAY=:99
+
   chrome:
-    image: zenika/alpine-chrome:latest
-    shm_size: '1gb'  # Increase shared memory size for Chrome
-    networks:
-      - mynet
+    image: selenium/standalone-chrome
+    ports:
+      - "4444:4444"
+    shm_size: '2gb'  # Important pour éviter des crashs de Chrome
+
 networks:
-  mynet:
+  default:

@@ -1,14 +1,18 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-import time
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 def fetch_vehicle_urls(base_url):
-    # Configuration du pilote Chrome avec des options pour l'exécution sans tête
-    options = Options()
+    # Configuration pour utiliser Remote WebDriver
+    options = webdriver.ChromeOptions()
     options.headless = True
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=options)
+
+    driver = webdriver.Remote(
+        command_executor='http://chrome:4444/wd/hub',  # Notez l'adresse du Selenium server dans Docker
+        desired_capabilities=DesiredCapabilities.CHROME,
+        options=options
+    )
 
     all_urls = []
     max_pages = 6000  # Nombre maximum de pages à scraper
@@ -35,17 +39,3 @@ def fetch_vehicle_urls(base_url):
 
     driver.quit()
     return all_urls
-
-def main():
-    print("Starting the scrap.py script...")
-    base_url = 'https://www.autoscout24.ch/fr/s?hadNoAccidentOnly=true&fuelTypes%5B0%5D=petrol&fuelTypes%5B1%5D=hev-petrol&fuelTypes%5B2%5D=mhev-petrol&fuelTypes%5B3%5D=phev-petrol&fuelTypes%5B4%5D=electric&horsePowerFrom=100&cubicCapacityFrom=1000'
-    # url page 1: https://www.autoscout24.ch/fr/s?hadNoAccidentOnly=true&fuelTypes%5B0%5D=petrol&fuelTypes%5B1%5D=hev-petrol&fuelTypes%5B2%5D=mhev-petrol&fuelTypes%5B3%5D=phev-petrol&fuelTypes%5B4%5D=electric&horsePowerFrom=100&cubicCapacityFrom=1000
-    # url page 2: https://www.autoscout24.ch/fr/s?hadNoAccidentOnly=true&fuelTypes%5B0%5D=petrol&fuelTypes%5B1%5D=hev-petrol&fuelTypes%5B2%5D=mhev-petrol&fuelTypes%5B3%5D=phev-petrol&fuelTypes%5B4%5D=electric&horsePowerFrom=100&cubicCapacityFrom=1000&pagination%5Bpage%5D=1
-    # url page 3: https://www.autoscout24.ch/fr/s?hadNoAccidentOnly=true&fuelTypes%5B0%5D=petrol&fuelTypes%5B1%5D=hev-petrol&fuelTypes%5B2%5D=mhev-petrol&fuelTypes%5B3%5D=phev-petrol&fuelTypes%5B4%5D=electric&horsePowerFrom=100&cubicCapacityFrom=1000&pagination%5Bpage%5D=2
-    
-    vehicle_urls = fetch_vehicle_urls(base_url)
-    for url in vehicle_urls:
-        print(url)
-
-if __name__ == "__main__":
-    main()
