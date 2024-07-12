@@ -1,0 +1,37 @@
+version: '3'
+services:
+  chrome:
+    image: selenium/standalone-chrome
+    ports:
+      - "4444:4444"
+    networks:
+      - selenium-net
+
+  myapp:
+    build: .
+    depends_on:
+      - chrome
+      - db  # Assurez-vous que myapp dépend aussi de la base de données
+    networks:
+      - selenium-net
+
+  db: # Configuration de la base de données
+    image: mysql:5.7  # Utilisation de MySQL version 5.7, vous pouvez choisir une autre version
+    environment:
+      MYSQL_ROOT_PASSWORD: password  # Mot de passe pour l'utilisateur root
+      MYSQL_DATABASE: mydatabase  # Nom de la base de données à créer automatiquement
+      MYSQL_USER: user  # Nom de l'utilisateur
+      MYSQL_PASSWORD: userpassword  # Mot de passe de l'utilisateur
+    ports:
+      - "3306:3306"  # Expose MySQL sur le port 3306 sur l'hôte
+    networks:
+      - selenium-net
+    volumes:
+      - db_data:/var/lib/mysql  # Conserve les données de la base de données entre les redémarrages des conteneurs
+
+volumes:
+  db_data: # Définition du volume db_data
+
+networks:
+  selenium-net:
+    driver: bridge
